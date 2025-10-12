@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SMARTPAWS</string>
+    <string name="mis_mascotas">Mis Mascotas</string>
+    <string name="agregar_nueva_mascota">Agregar Nueva Mascota</string>
 </resources>
