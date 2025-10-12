@@ -1,4 +1,4 @@
-package com.example.smartpaws.ui.theme.components
+package com.example.smartpaws.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
