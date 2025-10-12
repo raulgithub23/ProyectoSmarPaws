@@ -1,5 +1,7 @@
 package com.example.smartpaws.navigation
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.padding // Para aplicar innerPadding
 import androidx.compose.material3.Scaffold // Estructura base con slots
 import androidx.compose.runtime.Composable // Marcador composable
@@ -15,18 +17,20 @@ import androidx.compose.material3.ModalNavigationDrawer // Drawer lateral modal
 import androidx.compose.material3.rememberDrawerState // Estado del drawer
 import androidx.compose.material3.DrawerValue // Valores (Opened/Closed)
 import androidx.compose.runtime.rememberCoroutineScope // Alcance de corrutina
-import com.example.smartpaws.ui.theme.components.AppDrawer
-import com.example.smartpaws.ui.theme.components.AppTopBar
-import com.example.smartpaws.ui.theme.components.BottomNavigationBar
-import com.example.smartpaws.ui.theme.components.defaultDrawerItems
-import com.example.smartpaws.ui.theme.screen.AppointmentScreen
-import com.example.smartpaws.ui.theme.screen.HistoryScreen
-import com.example.smartpaws.ui.theme.screen.HomeScreen
-import com.example.smartpaws.ui.theme.screen.LoginScreenVm
-import com.example.smartpaws.ui.theme.screen.PetsScreen
-import com.example.smartpaws.ui.theme.screen.RegisterScreenVm
-import com.example.smartpaws.ui.theme.screen.UserScreen
-import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartpaws.ui.components.AppDrawer
+import com.example.smartpaws.ui.components.AppTopBar
+import com.example.smartpaws.ui.components.BottomNavigationBar
+import com.example.smartpaws.ui.components.defaultDrawerItems
+import com.example.smartpaws.ui.screen.AppointmentScreen
+import com.example.smartpaws.ui.screen.HistoryScreen
+import com.example.smartpaws.ui.screen.HomeScreen
+import com.example.smartpaws.ui.screen.LoginScreenVm
+import com.example.smartpaws.ui.mascota.PetsScreen
+import com.example.smartpaws.ui.mascota.PetsViewModel
+import com.example.smartpaws.ui.screen.RegisterScreenVm
+import com.example.smartpaws.ui.screen.UserScreen
 
 @Composable // Gráfico de navegación + Drawer + Scaffold
 fun AppNavGraph(navController: NavHostController) { // Recibe el controlador
@@ -131,8 +135,10 @@ fun AppNavGraph(navController: NavHostController) { // Recibe el controlador
                     )
                 }
                 composable(Route.Pets.path) { // Destino Mascotas
-                    PetsScreen(
+                    val viewModel: PetsViewModel = viewModel(
+                        viewModelStoreOwner = LocalActivity.current as ComponentActivity
                     )
+                    PetsScreen(viewModel = viewModel)
                 }
                 composable(Route.Login.path) { // Destino Login
                     //1 modificamos el acceso a la pagina
