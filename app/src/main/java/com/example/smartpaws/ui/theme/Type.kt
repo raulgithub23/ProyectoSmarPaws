@@ -1,4 +1,4 @@
-package com.example.smartpaws.ui.theme.theme
+package com.example.smartpaws.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
