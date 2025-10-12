@@ -1,4 +1,4 @@
-package com.example.smartpaws.ui.theme.screen
+package com.example.smartpaws.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

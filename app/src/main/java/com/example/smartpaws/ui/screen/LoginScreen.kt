@@ -1,4 +1,4 @@
-package com.example.smartpaws.ui.theme.screen
+package com.example.smartpaws.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -51,7 +51,7 @@ fun LoginScreenVm(
         onLoginOkNavigateHome()                              // Navega a Home
     }
 
-    com.example.smartpaws.ui.theme.screen.LoginScreen(                                             // Delegamos a UI presentacional
+    LoginScreen(                                             // Delegamos a UI presentacional
         email = state.email,                                 // Valor de email
         pass = state.pass,                                   // Valor de password
         emailError = state.emailError,                       // Error de email

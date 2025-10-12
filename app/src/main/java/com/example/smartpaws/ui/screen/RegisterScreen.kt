@@ -1,4 +1,4 @@
-package com.example.smartpaws.ui.theme.screen
+package com.example.smartpaws.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -51,7 +51,7 @@ fun RegisterScreenVm(
         onRegisteredNavigateLogin()                          // Navega a Login
     }
 
-    com.example.smartpaws.ui.theme.screen.RegisterScreen(                                      // Delegamos UI presentacional
+    RegisterScreen(                                      // Delegamos UI presentacional
         name = state.name,                                   // 1) Nombre
         email = state.email,                                 // 2) Email
         phone = state.phone,                                 // 3) Teléfono
