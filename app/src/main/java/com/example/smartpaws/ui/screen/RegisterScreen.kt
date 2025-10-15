@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,13 +30,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartpaws.ui.theme.DarkGreen
+import com.example.smartpaws.ui.theme.LightSecondary
 import com.example.smartpaws.viewmodel.AuthViewModel
+
 
 
 @Composable                                                  // Pantalla Registro conectada al VM
@@ -102,7 +108,7 @@ private fun RegisterScreen(
     onSubmit: () -> Unit,                                    // Acción Registrar
     onGoLogin: () -> Unit                                    // Ir a Login
 ) {
-    val bg = MaterialTheme.colorScheme.tertiaryContainer // Fondo único
+    val bg = LightSecondary // Fondo único
     //4 Anexamos las variables para mostrar y ocultar el password
     var showPass by remember { mutableStateOf(false) }        // Mostrar/ocultar password
     var showConfirm by remember { mutableStateOf(false) }     // Mostrar/ocultar confirm
@@ -111,13 +117,17 @@ private fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize() // Ocupa todo
             .background(bg) // Fondo
-            .padding(16.dp), // Margen
-        contentAlignment = Alignment.Center // Centro
+            .padding(30.dp), // Margen
+        contentAlignment = Alignment.Center,  // Centro
     ) {
         // 5 modificamos el parametro de la columna
-        Column(modifier = Modifier.fillMaxWidth()) { // Estructura vertical
+        Column(
+                modifier = Modifier.fillMaxWidth()
+                .background(Color(0xFFFFFFFF))) { // Estructura vertical
             Text(
-                text = "Registro",
+                color = DarkGreen,
+                text = "Registro Usuario",
+                fontWeight = FontWeight.Bold ,
                 style = MaterialTheme.typography.headlineSmall // Título
             )
             Spacer(Modifier.height(12.dp)) // Separación
