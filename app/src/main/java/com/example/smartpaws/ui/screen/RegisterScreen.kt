@@ -1,22 +1,25 @@
 package com.example.smartpaws.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -38,7 +43,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartpaws.R
 import com.example.smartpaws.ui.theme.DarkGreen
+import com.example.smartpaws.ui.theme.LightBackground
 import com.example.smartpaws.ui.theme.LightSecondary
 import com.example.smartpaws.viewmodel.AuthViewModel
 
@@ -87,6 +94,7 @@ fun RegisterScreenVm(
 
 @Composable // Pantalla Registro (solo navegación)
 private fun RegisterScreen(
+    modifier: Modifier = Modifier,
     name: String,                                            // 1) Nombre (solo letras/espacios)
     email: String,                                           // 2) Email
     phone: String,                                           // 3) Teléfono (solo números)
@@ -108,7 +116,7 @@ private fun RegisterScreen(
     onSubmit: () -> Unit,                                    // Acción Registrar
     onGoLogin: () -> Unit                                    // Ir a Login
 ) {
-    val bg = LightSecondary // Fondo único
+    val bg = DarkGreen // Fondo único
     //4 Anexamos las variables para mostrar y ocultar el password
     var showPass by remember { mutableStateOf(false) }        // Mostrar/ocultar password
     var showConfirm by remember { mutableStateOf(false) }     // Mostrar/ocultar confirm
@@ -117,15 +125,27 @@ private fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize() // Ocupa todo
             .background(bg) // Fondo
-            .padding(30.dp), // Margen
+            .padding(10.dp), // Margen
         contentAlignment = Alignment.Center,  // Centro
     ) {
         // 5 modificamos el parametro de la columna
         Column(
-                modifier = Modifier.fillMaxWidth()
-                .background(Color(0xFFFFFFFF))) { // Estructura vertical
+            modifier = Modifier
+                .fillMaxWidth()     // Ocupa todo el ancho
+                .fillMaxHeight()    // Ocupa todo el alto
+                .padding(16.dp)
+        ) { // Estructura vertical
+
+            Image(
+                painter = painterResource(R.drawable.logoblanco),
+                contentDescription = "Imagén del logo",
+                modifier = Modifier
+                    .size(130.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+
             Text(
-                color = DarkGreen,
+                color = Color.White,
                 text = "Registro Usuario",
                 fontWeight = FontWeight.Bold ,
                 style = MaterialTheme.typography.headlineSmall // Título
@@ -137,7 +157,7 @@ private fun RegisterScreen(
             OutlinedTextField(
                 value = name,                                // Valor actual
                 onValueChange = onNameChange,                // Notifica VM (filtra y valida)
-                label = { Text("Nombre") },                  // Etiqueta
+                label = { Text("Nombre", color = LightBackground) },                  // Etiqueta
                 singleLine = true,                           // Una línea
                 isError = nameError != null,                 // Marca error
                 keyboardOptions = KeyboardOptions(
@@ -155,7 +175,7 @@ private fun RegisterScreen(
             OutlinedTextField(
                 value = email,                               // Valor actual
                 onValueChange = onEmailChange,               // Notifica VM (valida)
-                label = { Text("Email") },                   // Etiqueta
+                label = { Text("Email", color = LightBackground) },                   // Etiqueta
                 singleLine = true,                           // Una línea
                 isError = emailError != null,                // Marca error
                 keyboardOptions = KeyboardOptions(
@@ -173,7 +193,7 @@ private fun RegisterScreen(
             OutlinedTextField(
                 value = phone,                               // Valor actual (solo dígitos)
                 onValueChange = onPhoneChange,               // Notifica VM (filtra y valida)
-                label = { Text("Teléfono") },                // Etiqueta
+                label = { Text("Teléfono", color = LightBackground) },                // Etiqueta
                 singleLine = true,                           // Una línea
                 isError = phoneError != null,                // Marca error
                 keyboardOptions = KeyboardOptions(
@@ -191,7 +211,7 @@ private fun RegisterScreen(
             OutlinedTextField(
                 value = pass,                                // Valor actual
                 onValueChange = onPassChange,                // Notifica VM (valida fuerza)
-                label = { Text("Contraseña") },              // Etiqueta
+                label = { Text("Contraseña" , color = LightBackground) },              // Etiqueta
                 singleLine = true,                           // Una línea
                 isError = passError != null,                 // Marca error
                 visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(), // Oculta/mostrar
@@ -215,7 +235,7 @@ private fun RegisterScreen(
             OutlinedTextField(
                 value = confirm,                             // Valor actual
                 onValueChange = onConfirmChange,             // Notifica VM (valida igualdad)
-                label = { Text("Confirmar contraseña") },    // Etiqueta
+                label = { Text("Confirmar contraseña" , color = LightBackground) },    // Etiqueta
                 singleLine = true,                           // Una línea
                 isError = confirmError != null,              // Marca error
                 visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(), // Oculta/mostrar
@@ -239,7 +259,15 @@ private fun RegisterScreen(
             Button(
                 onClick = onSubmit,                          // Intenta registrar (inserta en la colección)
                 enabled = canSubmit && !isSubmitting,        // Solo si todo es válido y no cargando
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = DarkGreen,
+                    disabledContainerColor = Color.Gray,
+                    disabledContentColor = Color.LightGray
+
+
+                )
             ) {
                 if (isSubmitting) {                          // Muestra loading mientras “procesa”
                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
@@ -259,7 +287,8 @@ private fun RegisterScreen(
 
             // ---------- BOTÓN IR A LOGIN ----------
             OutlinedButton(onClick = onGoLogin, modifier = Modifier.fillMaxWidth()) {
-                Text("Ir a Login")
+                Text("Ir a Login", color = Color.White)
+
             }
         }
     }
