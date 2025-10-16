@@ -41,7 +41,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.R
@@ -50,10 +49,10 @@ import com.example.smartpaws.ui.theme.LightBackground
 
 @Composable                                                  // Pantalla Login conectada al VM
 fun LoginScreenVm(
+    vm : AuthViewModel,
     onLoginOkNavigateHome: () -> Unit,                       // Navega a Home cuando el login es exitoso
     onGoRegister: () -> Unit                                 // Navega a Registro
 ) {
-    val vm: AuthViewModel = viewModel()                      // Crea/obtiene VM
     val state by vm.login.collectAsStateWithLifecycle()      // Observa el StateFlow en tiempo real
 
     if (state.success) {                                     // Si login fue exitoso…

@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,17 +45,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartpaws.R
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.ui.theme.LightBackground
-import com.example.smartpaws.ui.theme.LightSecondary
 import com.example.smartpaws.viewmodel.AuthViewModel
 
 
 
 @Composable                                                  // Pantalla Registro conectada al VM
 fun RegisterScreenVm(
+    vm: AuthViewModel,
     onRegisteredNavigateLogin: () -> Unit,                   // Navega a Login si success=true
     onGoLogin: () -> Unit                                    // Botón alternativo para ir a Login
 ) {
-    val vm: AuthViewModel = viewModel()                      // Crea/obtiene VM
     val state by vm.register.collectAsStateWithLifecycle()   // Observa estado en tiempo real
 
     if (state.success) {                                     // Si registro fue exitoso

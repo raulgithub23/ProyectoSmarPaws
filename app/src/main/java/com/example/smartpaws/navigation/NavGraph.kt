@@ -1,43 +1,42 @@
-package com.example.smartpaws.navigation
-
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.layout.padding // Para aplicar innerPadding
-import androidx.compose.material3.Scaffold // Estructura base con slots
-import androidx.compose.runtime.Composable // Marcador composable
-import androidx.compose.runtime.getValue // Para obtener valor de estado
-import androidx.compose.ui.Modifier // Modificador
-import androidx.navigation.NavHostController // Controlador de navegación
-import androidx.navigation.compose.NavHost // Contenedor de destinos
-import androidx.navigation.compose.composable // Declarar cada destino
-import androidx.navigation.compose.currentBackStackEntryAsState // Para obtener ruta actual
-import kotlinx.coroutines.launch // Para abrir/cerrar drawer con corrutinas
-
-import androidx.compose.material3.ModalNavigationDrawer // Drawer lateral modal
-import androidx.compose.material3.rememberDrawerState // Estado del drawer
-import androidx.compose.material3.DrawerValue // Valores (Opened/Closed)
-import androidx.compose.runtime.rememberCoroutineScope // Alcance de corrutina
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.smartpaws.navigation.Route
 import com.example.smartpaws.ui.components.AppDrawer
 import com.example.smartpaws.ui.components.AppTopBar
 import com.example.smartpaws.ui.components.BottomNavigationBar
 import com.example.smartpaws.ui.components.defaultDrawerItems
+import com.example.smartpaws.ui.mascota.PetsScreen
+import com.example.smartpaws.ui.mascota.PetsViewModel
 import com.example.smartpaws.ui.screen.AppointmentScreen
 import com.example.smartpaws.ui.screen.HistoryScreen
 import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
-import com.example.smartpaws.ui.mascota.PetsScreen
-import com.example.smartpaws.ui.mascota.PetsViewModel
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
+import com.example.smartpaws.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable // Gráfico de navegación + Drawer + Scaffold
-fun AppNavGraph(navController: NavHostController) { // Recibe el controlador
+fun AppNavGraph(navController: NavHostController,
+                authViewModel: AuthViewModel) { // Recibe el controlador
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // Estado del drawer
     val scope = rememberCoroutineScope() // Necesario para abrir/cerrar drawer
-    
+
     // Obtener la ruta actual para el bottom navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -99,7 +98,7 @@ fun AppNavGraph(navController: NavHostController) { // Recibe el controlador
                     onPets = goPets,
                     onHistory = goHistory,
 
-                )
+                    )
             }
         ) { innerPadding -> // Padding que evita solapar contenido
             NavHost( // Contenedor de destinos navegables
@@ -116,12 +115,14 @@ fun AppNavGraph(navController: NavHostController) { // Recibe el controlador
 
                 composable(Route.Login.path) { // Destino Login
                     LoginScreenVm(
+                        vm = authViewModel,
                         onLoginOkNavigateHome = goHome,
                         onGoRegister = goRegister
                     )
                 }
                 composable(Route.Register.path) { // Destino Registro
                     RegisterScreenVm(
+                        vm = authViewModel,
                         onRegisteredNavigateLogin = goLogin,
                         onGoLogin = goLogin
                     )
@@ -139,14 +140,6 @@ fun AppNavGraph(navController: NavHostController) { // Recibe el controlador
                         viewModelStoreOwner = LocalActivity.current as ComponentActivity
                     )
                     PetsScreen(viewModel = viewModel)
-                }
-                composable(Route.Login.path) { // Destino Login
-                    //1 modificamos el acceso a la pagina
-                    // Usamos la versión con ViewModel (LoginScreenVm) para formularios/validación en tiempo real
-                    LoginScreenVm(
-                        onLoginOkNavigateHome = goHome,            // Si el VM marca success=true, navegamos a Home
-                        onGoRegister = goRegister                  // Enlace para ir a la pantalla de Registro
-                    )
                 }
                 composable(Route.User.path) { // Destino Mascotas
                     UserScreen(
