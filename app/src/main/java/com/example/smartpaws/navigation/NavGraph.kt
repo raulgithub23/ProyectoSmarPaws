@@ -21,7 +21,7 @@ import com.example.smartpaws.ui.components.BottomNavigationBar
 import com.example.smartpaws.ui.components.defaultDrawerItems
 import com.example.smartpaws.ui.mascota.PetsScreen
 import com.example.smartpaws.ui.mascota.PetsViewModel
-import com.example.smartpaws.ui.screen.AppointmentScreen
+import com.example.smartpaws.ui.screen.screenprocesspayment.AppointmentScreen
 import com.example.smartpaws.ui.screen.HistoryScreen
 import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
@@ -103,13 +103,11 @@ fun AppNavGraph(navController: NavHostController,
         ) { innerPadding -> // Padding que evita solapar contenido
             NavHost( // Contenedor de destinos navegables
                 navController = navController, // Controlador
-                startDestination = Route.Home.path, // Inicio: Home
+                startDestination = Route.Login.path, // Inicio: Home
                 modifier = Modifier.padding(innerPadding) // Respeta topBar
             ) {
                 composable(Route.Home.path) { // Destino Home
                     HomeScreen(
-                        onGoLogin = goLogin,     // Botón para ir a Login
-                        onGoRegister = goRegister // Botón para ir a Registro
                     )
                 }
 
