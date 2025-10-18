@@ -25,14 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 
 //ACÁ VA ESTAR LOS PRINCIPAL DE SMARTPAWS
 @Composable // Pantalla Home (sin formularios, solo navegación/diseño)
 fun HomeScreen(
-    onGoLogin: () -> Unit,   // Acción a Login
-    onGoRegister: () -> Unit // Acción a Registro
 ) {
     val bg = Color(0xFFC0E6BA) // Fondo agradable para Home
     val card = Color(0xFFEAF9E7) // COLOR DE CARTAS 0xFFEAF9E7
@@ -106,18 +105,25 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp) // Espacio entre botones
             ) {
                 Button(
-                    onClick = onGoLogin,
+                    onClick = { /* acción: ver más */ },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF013237),
                         contentColor = Color.White
                     )
                 ) {
                     Text("Ir a Login")
                 } // Navega a Login
-                OutlinedButton(onClick = onGoRegister,
+                OutlinedButton(onClick = { /* acción: ver más */ },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEAF9E7),
                         contentColor = Color(0xFF013237))
                 ) { Text("Ir a Registro") } // A Registro
             }
         }
     }
+}
+
+
+@Composable
+@Preview(showBackground = true)
+fun HomeScreenPreview(){
+    HomeScreen()
 }
