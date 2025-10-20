@@ -121,6 +121,8 @@ private fun RegisterScreen(
 
     Box(
         modifier = Modifier
+            .fillMaxSize()
+            .background(DarkGreen)
             .fillMaxSize() // Ocupa todo
             .background(bg) // Fondo
             .padding(10.dp), // Margen
@@ -129,8 +131,7 @@ private fun RegisterScreen(
         // 5 modificamos el parametro de la columna
         Column(
             modifier = Modifier
-                .fillMaxWidth()     // Ocupa todo el ancho
-                .fillMaxHeight()    // Ocupa todo el alto
+                .fillMaxSize()
                 .padding(16.dp)
         ) { // Estructura vertical
 

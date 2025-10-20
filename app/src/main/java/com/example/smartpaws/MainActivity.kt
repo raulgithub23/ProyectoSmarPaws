@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.smartpaws.data.local.database.AppDatabase
 import com.example.smartpaws.data.repository.UserRepository
+import com.example.smartpaws.ui.theme.SMARTPAWSTheme
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.AuthViewModelFactory
 
@@ -59,7 +60,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
 
     // ====== TU NAVEGACIÓN ORIGINAL ======
     val navController = rememberNavController() // Controlador de navegación (igual que antes)
-    MaterialTheme { // Provee colores/tipografías Material 3 (igual que antes)
+    SMARTPAWSTheme(dynamicColor = false) { // Provee colores/tipografías Material 3 (igual que antes)
         Surface(color = MaterialTheme.colorScheme.background) { // Fondo general (igual que antes)
 
             // ====== MOD: pasamos el AuthViewModel a tu NavGraph ======

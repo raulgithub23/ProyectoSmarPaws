@@ -24,10 +24,11 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomNavigationBar(
+    currentRoute: String?,
     onHome: () -> Unit,
     onAppointment: () -> Unit,
     onPets: () -> Unit,
-    onHistory: () ->Unit
+    onHistory: () -> Unit
 ) {
     BottomAppBar(
         containerColor = Color(0xFF4CA771), // Color verde de tu app

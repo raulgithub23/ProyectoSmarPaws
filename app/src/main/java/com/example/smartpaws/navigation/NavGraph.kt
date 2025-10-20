@@ -1,5 +1,7 @@
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
@@ -9,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -30,119 +33,178 @@ import com.example.smartpaws.ui.screen.UserScreen
 import com.example.smartpaws.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
-@Composable // Gráfico de navegación + Drawer + Scaffold
-fun AppNavGraph(navController: NavHostController,
-                authViewModel: AuthViewModel) { // Recibe el controlador
+@Composable
+fun AppNavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
+    // Observamos el estado del login para saber si el usuario está autenticado
+    val loginState by authViewModel.login.collectAsStateWithLifecycle()
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // Estado del drawer
-    val scope = rememberCoroutineScope() // Necesario para abrir/cerrar drawer
+    NavHost(
+        navController = navController,
+        startDestination = Route.Login.path, // Comienza en Login
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // ========== PANTALLAS DE AUTENTICACIÓN (sin Scaffold) ==========
+        composable(Route.Login.path) {
+            LoginScreenVm(
+                vm = authViewModel,
+                onLoginOkNavigateHome = {
+                    // Navega a Home y limpia el back stack para que no pueda volver al login
+                    navController.navigate(Route.Home.path) {
+                        popUpTo(Route.Login.path) { inclusive = true }
+                    }
+                },
+                onGoRegister = {
+                    navController.navigate(Route.Register.path)
+                }
+            )
+        }
+
+        composable(Route.Register.path) {
+            RegisterScreenVm(
+                vm = authViewModel,
+                onRegisteredNavigateLogin = {
+                    navController.navigate(Route.Login.path) {
+                        popUpTo(Route.Register.path) { inclusive = true }
+                    }
+                },
+                onGoLogin = {
+                    navController.popBackStack() // Vuelve al login
+                }
+            )
+        }
+
+        // ========== PANTALLAS PRINCIPALES (con Scaffold completo) ==========
+        // Envolvemos todas las pantallas autenticadas en un Scaffold compartido
+        composable(Route.Home.path) {
+            MainScaffoldWrapper(navController) {
+                HomeScreen()
+            }
+        }
+
+        composable(Route.Pets.path) {
+            MainScaffoldWrapper(navController) {
+                val viewModel: PetsViewModel = viewModel(
+                    viewModelStoreOwner = LocalActivity.current as ComponentActivity
+                )
+                PetsScreen(viewModel = viewModel)
+            }
+        }
+
+        composable(Route.History.path) {
+            MainScaffoldWrapper(navController) {
+                HistoryScreen()
+            }
+        }
+
+        composable(Route.Appointment.path) {
+            MainScaffoldWrapper(navController) {
+                AppointmentScreen()
+            }
+        }
+
+        composable(Route.User.path) {
+            MainScaffoldWrapper(navController) {
+                UserScreen()
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainScaffoldWrapper(
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     // Obtener la ruta actual para el bottom navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Helpers de navegación (reutilizamos en topbar/drawer/botones y bottom bar)
-    val goHome: () -> Unit    = { navController.navigate(Route.Home.path) }    // Ir a Home
-    val goPets: () -> Unit    = { navController.navigate(Route.Pets.path) }    // Ir a Mascotas
-    val goHistory: () -> Unit    = { navController.navigate(Route.History.path) }    // Ir a historial
-    val goLogin: () -> Unit   = { navController.navigate(Route.Login.path) }   // Ir a Login
-    val goRegister: () -> Unit = { navController.navigate(Route.Register.path) } // Ir a Registro
-    val goAppointment: () -> Unit = { navController.navigate(Route.Appointment.path) } // Ir a citas
-    val goUser: () -> Unit = { navController.navigate(Route.User.path)} //IR AL PERFIL DE USUARIO
+    // Helpers de navegación
+    val goHome: () -> Unit = {
+        navController.navigate(Route.Home.path) {
+            popUpTo(Route.Home.path) { inclusive = true }
+        }
+    }
+    val goPets: () -> Unit = {
+        navController.navigate(Route.Pets.path) {
+            popUpTo(Route.Home.path)
+        }
+    }
+    val goHistory: () -> Unit = {
+        navController.navigate(Route.History.path) {
+            popUpTo(Route.Home.path)
+        }
+    }
+    val goAppointment: () -> Unit = {
+        navController.navigate(Route.Appointment.path) {
+            popUpTo(Route.Home.path)
+        }
+    }
+    val goUser: () -> Unit = {
+        navController.navigate(Route.User.path) {
+            popUpTo(Route.Home.path)
+        }
+    }
+    val goLogin: () -> Unit = {
+        navController.navigate(Route.Login.path) {
+            popUpTo(0) { inclusive = true } // Limpia todo el back stack
+        }
+    }
 
-
-    ModalNavigationDrawer( // Capa superior con drawer lateral
-        drawerState = drawerState, // Estado del drawer
-        drawerContent = { // Contenido del drawer (menú)
-            AppDrawer( // Nuestro componente Drawer
-                currentRoute = null, // Puedes pasar navController.currentBackStackEntry?.destination?.route
-                items = defaultDrawerItems( // Lista estándar
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawer(
+                currentRoute = currentRoute,
+                items = defaultDrawerItems(
                     onHome = {
-                        scope.launch { drawerState.close() } // Cierra drawer
-                        goHome() // Navega a Home
+                        scope.launch { drawerState.close() }
+                        goHome()
                     },
                     onLogin = {
-                        scope.launch { drawerState.close() } // Cierra drawer
-                        goLogin() // Navega a Login
+                        scope.launch { drawerState.close() }
+                        goLogin()
                     },
                     onRegister = {
-                        scope.launch { drawerState.close() } // Cierra drawer
-                        goRegister() // Navega a Registro
+                        scope.launch { drawerState.close() }
+                        // El registro solo está disponible desde login
                     },
-
                     onUser = {
                         scope.launch { drawerState.close() }
                         goUser()
                     }
-
-
                 )
             )
         }
     ) {
-        Scaffold( // Estructura base de pantalla
-            topBar = { // Barra superior con íconos/menú
+        Scaffold(
+            topBar = {
                 AppTopBar(
-                    onOpenDrawer = { scope.launch { drawerState.open() } }, // Abre drawer
-                    onHome = goHome,     // Botón Home
-                    onLogin = goLogin,   // Botón Login
-                    onRegister = goRegister, // Botón Registro
+                    onOpenDrawer = { scope.launch { drawerState.open() } },
+                    onHome = goHome,
+                    onLogin = goLogin,
+                    onRegister = {}, // No tiene sentido desde aquí
                     onUser = goUser
-
                 )
             },
-            bottomBar = { // Barra inferior con navegación
+            bottomBar = {
                 BottomNavigationBar(
+                    currentRoute = currentRoute,
                     onHome = goHome,
                     onAppointment = goAppointment,
                     onPets = goPets,
-                    onHistory = goHistory,
-
-                    )
+                    onHistory = goHistory
+                )
             }
-        ) { innerPadding -> // Padding que evita solapar contenido
-            NavHost( // Contenedor de destinos navegables
-                navController = navController, // Controlador
-                startDestination = Route.Login.path, // Inicio: Home
-                modifier = Modifier.padding(innerPadding) // Respeta topBar
-            ) {
-                composable(Route.Home.path) { // Destino Home
-                    HomeScreen(
-                    )
-                }
-
-                composable(Route.Login.path) { // Destino Login
-                    LoginScreenVm(
-                        vm = authViewModel,
-                        onLoginOkNavigateHome = goHome,
-                        onGoRegister = goRegister
-                    )
-                }
-                composable(Route.Register.path) { // Destino Registro
-                    RegisterScreenVm(
-                        vm = authViewModel,
-                        onRegisteredNavigateLogin = goLogin,
-                        onGoLogin = goLogin
-                    )
-                }
-                composable(Route.History.path) { // Destino Mascotas
-                    HistoryScreen(
-                    )
-                }
-                composable(Route.Appointment.path) { // Destino AgendarCitas
-                    AppointmentScreen(
-                    )
-                }
-                composable(Route.Pets.path) { // Destino Mascotas
-                    val viewModel: PetsViewModel = viewModel(
-                        viewModelStoreOwner = LocalActivity.current as ComponentActivity
-                    )
-                    PetsScreen(viewModel = viewModel)
-                }
-                composable(Route.User.path) { // Destino Mascotas
-                    UserScreen(
-                    )
-                }
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                content()
             }
         }
     }
