@@ -31,17 +31,17 @@ abstract class AppDatabase: RoomDatabase(){
 
         //variable para instanciar la BD
         @Volatile
-        private var INSTANCE: com.example.smartpaws.data.local.database.AppDatabase? = null
+        private var INSTANCE: AppDatabase? = null
         //variable para el nombre
         private const val DB_NAME = "ui_navegacion.db"
 
         //obtener la instancia unica de BD
-        fun getInstance(context: Context): com.example.smartpaws.data.local.database.AppDatabase {
+        fun getInstance(context: Context): AppDatabase {
             //construimos la BD
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    com.example.smartpaws.data.local.database.AppDatabase::class.java,
+                    AppDatabase::class.java,
                     DB_NAME
                 )
                     //definir una funcion que se ejecuta unicamente cuando es la 1era vez
