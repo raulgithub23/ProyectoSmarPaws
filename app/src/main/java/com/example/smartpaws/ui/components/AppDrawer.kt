@@ -51,13 +51,13 @@ fun AppDrawer(
 @Composable
 fun defaultDrawerItems(
     onHome: () -> Unit,   // Acción Home
-    onLogin: () -> Unit,  // Acción Login
-    onRegister: () -> Unit, // Acción Registro
+//    onLogin: () -> Unit,  // Acción Login
+//    onRegister: () -> Unit, // Acción Registro
     onUser: () -> Unit //ACCION DEL PERFIL
 
 ): List<DrawerItem> = listOf(
     DrawerItem("Home", Icons.Filled.Home, onHome),          // Ítem Home
-    DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),       // Ítem Login
-    DrawerItem("Registro", Icons.Filled.Person, onRegister), // Ítem Registro
+//    DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),       // Ítem Login
+//    DrawerItem("Registro", Icons.Filled.Person, onRegister), // Ítem Registro
     DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
 )

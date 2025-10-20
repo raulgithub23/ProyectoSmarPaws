@@ -38,8 +38,6 @@ fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel
 ) {
-    // Observamos el estado del login para saber si el usuario está autenticado
-    val loginState by authViewModel.login.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
@@ -167,14 +165,14 @@ private fun MainScaffoldWrapper(
                         scope.launch { drawerState.close() }
                         goHome()
                     },
-                    onLogin = {
-                        scope.launch { drawerState.close() }
-                        goLogin()
-                    },
-                    onRegister = {
-                        scope.launch { drawerState.close() }
-                        // El registro solo está disponible desde login
-                    },
+//                    onLogin = {
+//                        scope.launch { drawerState.close() }
+//                        goLogin()
+//                    },
+//                    onRegister = {
+//                        scope.launch { drawerState.close() }
+//                        // El registro solo está disponible desde login
+//                    },
                     onUser = {
                         scope.launch { drawerState.close() }
                         goUser()
