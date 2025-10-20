@@ -1,4 +1,4 @@
-package com.example.smartpaws.ui.screen
+package com.example.smartpaws.ui.screen.screenprocesspayment
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

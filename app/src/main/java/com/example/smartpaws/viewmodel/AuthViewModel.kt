@@ -2,6 +2,7 @@ package com.example.smartpaws.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartpaws.data.repository.UserRepository
 import com.example.smartpaws.domain.validation.validateConfirm
 import com.example.smartpaws.domain.validation.validateEmail
 import com.example.smartpaws.domain.validation.validateNameLettersOnly
@@ -45,24 +46,15 @@ data class RegisterUiState(                                // Estado de la panta
 
 // ----------------- COLECCIÓN EN MEMORIA (solo para la demo) -----------------
 
-// Modelo mínimo de usuario para la colección
-private data class DemoUser(                               // Datos que vamos a guardar en la colección
-    val name: String,                                      // Nombre
-    val email: String,                                     // Email (lo usamos como “id”)
-    val phone: String,                                     // Teléfono
-    val pass: String                                       // Contraseña en texto (solo demo; no producción)
-)
+//2.- Eliminamos la estructura de DemoUser
 
-class AuthViewModel : ViewModel() {                         // ViewModel que maneja Login/Registro
+class AuthViewModel(
+    // NUEVO: 4.- inyectamos el repositorio real que usa Room/SQLite
+    private val repository: UserRepository
+) : ViewModel() {                         // ViewModel que maneja Login/Registro
 
-    // Colección **estática** en memoria compartida entre instancias del VM (sin storage persistente)
-    companion object {
-        // Lista mutable de usuarios para la demo (se pierde al cerrar la app)
-        private val USERS = mutableListOf(
-            // Usuario por defecto para probar login:
-            DemoUser(name = "Demo", email = "demo@duoc.cl", phone = "12345678", pass = "Demo123!")
-        )
-    }
+    // 3.- Eliminamos Colección **estática** en memoria compartida entre instancias del VM (sin storage persistente)
+
 
     // Flujos de estado para observar desde la UI
     private val _login = MutableStateFlow(LoginUiState())   // Estado interno (Login)
@@ -98,22 +90,20 @@ class AuthViewModel : ViewModel() {                         // ViewModel que man
             _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Seteamos loading
             delay(500)                                      // Simulamos tiempo de verificación
 
-            // Buscamos en la **colección en memoria** un usuario con ese email
-            val user = USERS.firstOrNull { it.email.equals(s.email, ignoreCase = true) }
+            //6.- Se cambia lo anterior por esto ✅ NUEVO: consulta real a la BD vía repositorio
+            val result = repository.login(s.email.trim(), s.pass)
 
-            // ¿Coincide email + contraseña?
-            val ok = user != null && user.pass == s.pass
-
-            _login.update {                                 // Actualizamos con el resultado
-                it.copy(
-                    isSubmitting = false,                   // Fin carga
-                    success = ok,                           // true si credenciales correctas
-                    errorMsg = if (!ok) "Credenciales inválidas" else null // Mensaje si falla
-                )
+            // Interpreta el resultado y actualiza estado
+            _login.update {
+                if (result.isSuccess) {
+                    it.copy(isSubmitting = false, success = true, errorMsg = null) // OK: éxito
+                } else {
+                    it.copy(isSubmitting = false, success = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error de autenticación")
+                }
             }
         }
     }
-
     fun clearLoginResult() {                                // Limpia banderas tras navegar
         _login.update { it.copy(success = false, errorMsg = null) }
     }
@@ -167,28 +157,22 @@ class AuthViewModel : ViewModel() {                         // ViewModel que man
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Loading
             delay(700)                                      // Simulamos IO
 
-            // ¿Existe ya un usuario con el mismo email en la **colección**?
-            val duplicated = USERS.any { it.email.equals(s.email, ignoreCase = true) }
-
-            if (duplicated) {                               // Si ya existe, devolvemos error
-                _register.update {
-                    it.copy(isSubmitting = false, success = false, errorMsg = "El usuario ya existe")
-                }
-                return@launch                                // Salimos
-            }
-
-            // Insertamos el nuevo usuario en la **colección** (solo demo; no persistimos)
-            USERS.add(
-                DemoUser(
-                    name = s.name.trim(),
-                    email = s.email.trim(),
-                    phone = s.phone.trim(),
-                    pass = s.pass                            // En demo lo guardamos en texto (para clase)
-                )
+            // 7.- Se cambia esto por lo anterior NUEVO: inserta en BD (con teléfono) vía repositorio
+            val result = repository.register(
+                name = s.name.trim(),
+                email = s.email.trim(),
+                phone = s.phone.trim(),                     // Incluye teléfono
+                pass = s.pass
             )
 
-            _register.update {                               // Éxito
-                it.copy(isSubmitting = false, success = true, errorMsg = null)
+            // Interpreta resultado y actualiza estado
+            _register.update {
+                if (result.isSuccess) {
+                    it.copy(isSubmitting = false, success = true, errorMsg = null)  // OK
+                } else {
+                    it.copy(isSubmitting = false, success = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "No se pudo registrar")
+                }
             }
         }
     }
