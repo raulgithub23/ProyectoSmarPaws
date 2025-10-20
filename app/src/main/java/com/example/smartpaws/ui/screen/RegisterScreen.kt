@@ -41,7 +41,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartpaws.R
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.ui.theme.LightBackground

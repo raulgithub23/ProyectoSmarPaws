@@ -7,10 +7,10 @@ import androidx.room.PrimaryKey
 data class UserEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
-    val name: String,
-    val email: String,
-    val phone: String,
-    val password: String
+    val name: String,              // Obligatorio
+    val email: String,             // Obligatorio
+    val phone: String,    // Opcional
+    val password: String           // Obligatorio
 )
 
 
