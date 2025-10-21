@@ -5,6 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.smartpaws.data.local.doctors.DoctorDao
+import com.example.smartpaws.data.local.doctors.DoctorEntity
+import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
 import com.example.smartpaws.data.local.pets.PetsDao
 import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.local.user.UserDao
@@ -16,16 +19,18 @@ import kotlinx.coroutines.launch
 @Database(
     entities = [
         UserEntity::class,
-        PetsEntity::class
+        PetsEntity::class,
+        DoctorEntity::class,
+        DoctorScheduleEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
     //integramos el DAO de cada entidad
     abstract fun userDao(): UserDao
     abstract fun petsDao(): PetsDao
-
+    abstract fun doctorDao(): DoctorDao
 
     companion object{
 
@@ -52,6 +57,7 @@ abstract class AppDatabase: RoomDatabase(){
                             CoroutineScope(Dispatchers.IO).launch {
                                 val userDao = getInstance(context).userDao()
                                 val petsDao = getInstance(context).petsDao()
+                                val doctorDao = getInstance(context).doctorDao()
 
                                 //creamos las semillas de los insert de usuarios
                                 val userSeed = listOf(
@@ -85,9 +91,50 @@ abstract class AppDatabase: RoomDatabase(){
                                         userId = 2,  name = "Rex", especie = "Perro", fechaNacimiento = "2019-03-10", peso = 25.0f, genero = "M", color = "Negro", notas = "Muy protector"
                                     )
                                 )
+
                                 //INSERTAR SI NO HAY REGISTRO EN LA TABLA
                                 if (petsDao.count() == 0) {
                                     petsSeed.forEach { petsDao.insert(it) }
+                                }
+
+                                // 3️⃣ TERCERO: Doctores y sus horarios
+                                val doctorsSeed = listOf(
+                                    DoctorEntity(
+                                        name = "Dra. María González",
+                                        specialty = "Veterinario General",
+                                        phone = "987654321",
+                                        email = "maria@smartpaws.cl"
+                                    ),
+                                    DoctorEntity(
+                                        name = "Dr. Carlos Ruiz",
+                                        specialty = "Cirujano Veterinario",
+                                        phone = "987654322",
+                                        email = "carlos@smartpaws.cl"
+                                    )
+                                )
+
+                                if (doctorDao.count() == 0) {
+                                    doctorsSeed.forEachIndexed { index, doctor ->
+                                        val doctorId = doctorDao.insert(doctor)  //
+
+                                        // Horarios para cada doctor
+                                        val schedules = when(index) {
+                                            0 -> listOf( // Dra. María (Lunes a Viernes)
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Lunes", startTime = "09:00", endTime = "18:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "09:00", endTime = "18:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Miércoles", startTime = "09:00", endTime = "18:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "09:00", endTime = "18:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "09:00", endTime = "18:00")
+                                            )
+                                            1 -> listOf( // Dr. Carlos (Martes, Jueves, Sábado)
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "10:00", endTime = "14:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "10:00", endTime = "14:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Sábado", startTime = "09:00", endTime = "13:00")
+                                            )
+                                            else -> emptyList()
+                                        }
+                                        doctorDao.insertSchedules(schedules)
+                                    }
                                 }
                             }
                         }
