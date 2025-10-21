@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.smartpaws.data.local.appointment.AppointmentDao
+import com.example.smartpaws.data.local.appointment.AppointmentEntity
 import com.example.smartpaws.data.local.doctors.DoctorDao
 import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
@@ -23,7 +25,7 @@ import kotlinx.coroutines.launch
         DoctorEntity::class,
         DoctorScheduleEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
@@ -31,6 +33,8 @@ abstract class AppDatabase: RoomDatabase(){
     abstract fun userDao(): UserDao
     abstract fun petsDao(): PetsDao
     abstract fun doctorDao(): DoctorDao
+    abstract fun appointmentDao(): AppointmentDao
+
 
     companion object{
 
@@ -58,6 +62,7 @@ abstract class AppDatabase: RoomDatabase(){
                                 val userDao = getInstance(context).userDao()
                                 val petsDao = getInstance(context).petsDao()
                                 val doctorDao = getInstance(context).doctorDao()
+                                val appointmentDao = getInstance(context).appointmentDao()
 
                                 //creamos las semillas de los insert de usuarios
                                 val userSeed = listOf(
@@ -136,9 +141,42 @@ abstract class AppDatabase: RoomDatabase(){
                                         doctorDao.insertSchedules(schedules)
                                     }
                                 }
+
+                                // --- Citas seed ---
+                                if (appointmentDao.count() == 0) {
+                                    val citaSeed = listOf(
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 1,
+                                            doctorId = 1,
+                                            date = "2025-10-22",
+                                            time = "10:30",
+                                            notes = "Vacunación anual"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 2,
+                                            doctorId = 2,
+                                            date = "2025-10-25",
+                                            time = "15:00",
+                                            notes = "Control dental"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 2,
+                                            petId = 3,
+                                            doctorId = 1,
+                                            date = "2025-10-28",
+                                            time = "09:00",
+                                            notes = "Chequeo general"
+                                        )
+                                    )
+                                    citaSeed.forEach { appointmentDao.insert(it) }
+                                }
                             }
                         }
                     })
+
+
                     //destruyo todos los elementos anteriores
                     .fallbackToDestructiveMigration()
                     .build()
