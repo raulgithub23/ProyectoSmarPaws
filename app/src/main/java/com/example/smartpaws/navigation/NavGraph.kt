@@ -31,12 +31,14 @@ import com.example.smartpaws.ui.screen.LoginScreenVm
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
 import com.example.smartpaws.viewmodel.AuthViewModel
+import com.example.smartpaws.viewmodel.HistoryViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    historyViewModel: HistoryViewModel
 ) {
 
     NavHost(
@@ -93,7 +95,7 @@ fun AppNavGraph(
 
         composable(Route.History.path) {
             MainScaffoldWrapper(navController) {
-                HistoryScreen()
+                HistoryScreen(viewModel = historyViewModel)
             }
         }
 

@@ -23,9 +23,10 @@ import kotlinx.coroutines.launch
         UserEntity::class,
         PetsEntity::class,
         DoctorEntity::class,
-        DoctorScheduleEntity::class
+        DoctorScheduleEntity::class,
+        AppointmentEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
