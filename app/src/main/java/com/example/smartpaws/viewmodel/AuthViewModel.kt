@@ -118,8 +118,15 @@ class AuthViewModel(
     }
 
     fun logout() {
-        _login.update { LoginUiState() } // Reset completo del estado
+        _login.value = LoginUiState(
+            success = false,
+            userId = null,
+            email = "",
+            pass = "",
+            canSubmit = false
+        )
     }
+
 
     // ----------------- REGISTRO: handlers y envío -----------------
 

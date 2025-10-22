@@ -90,7 +90,10 @@ fun AppNavGraph(
 
         composable(Route.Pets.path) {
             MainScaffoldWrapper(navController) {
-                PetsScreen(viewModel = petsViewModel)
+                PetsScreen(
+                    petsViewModel = petsViewModel,
+                    authViewModel = authViewModel
+                )
             }
         }
 

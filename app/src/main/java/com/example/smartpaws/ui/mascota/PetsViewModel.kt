@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.viewmodel.AuthViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,12 +27,17 @@ class PetsViewModel(
     * ============
     */
 
+    private var observePetsJob: Job? = null
+
     init {
         viewModelScope.launch {
-            // VEMOS EL ESTADO DEL LOGIN PARA OBTENER SU INFO AL ESTAR LOGEADO
             authViewModel.login.collect { loginState ->
                 if (loginState.success && loginState.userId != null) {
-                    observePets(loginState.userId)
+                    // Reinicia la observación para el nuevo usuario
+                    startObservingPets(loginState.userId)
+                } else if (!loginState.success && loginState.userId == null) {
+                    // Limpia datos al desloguear
+                    clearPets()
                 }
             }
         }
@@ -44,6 +50,34 @@ class PetsViewModel(
             is PetsEvent.RemovePetFromUser -> removePet(event.pet)
             is PetsEvent.LoadUserPets -> loadPets(event.userId)
         }
+    }
+
+    private fun startObservingPets(userId: Long) {
+        // Cancela observaciones anteriores (si había otra sesión)
+        observePetsJob?.cancel()
+
+        // Limpia el estado anterior antes de cargar el nuevo usuario
+        _uiState.update { it.copy(petsList = emptyList(), isLoading = true, error = null) }
+
+        // Nueva suscripción al Flow del usuario actual
+        observePetsJob = viewModelScope.launch {
+            repository.observePetsByUser(userId).collect { result ->
+                result.onSuccess { pets ->
+                    _uiState.update {
+                        it.copy(petsList = pets, isLoading = false, error = null)
+                    }
+                }.onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, error = e.message ?: "Error al cargar mascotas")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun clearPets() {
+        observePetsJob?.cancel()
+        _uiState.value = PetsUiState() // Limpia completamente
     }
 
     /*
