@@ -10,6 +10,8 @@ import com.example.smartpaws.data.local.appointment.AppointmentEntity
 import com.example.smartpaws.data.local.doctors.DoctorDao
 import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
+import com.example.smartpaws.data.local.pets.PetFactEntity
+import com.example.smartpaws.data.local.pets.PetFactDao
 import com.example.smartpaws.data.local.pets.PetsDao
 import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.local.user.UserDao
@@ -24,7 +26,8 @@ import kotlinx.coroutines.launch
         PetsEntity::class,
         DoctorEntity::class,
         DoctorScheduleEntity::class,
-        AppointmentEntity::class
+        AppointmentEntity::class,
+        PetFactEntity::class
     ],
     version = 6,
     exportSchema = false
@@ -35,6 +38,7 @@ abstract class AppDatabase: RoomDatabase(){
     abstract fun petsDao(): PetsDao
     abstract fun doctorDao(): DoctorDao
     abstract fun appointmentDao(): AppointmentDao
+    abstract fun petFactDao(): PetFactDao
 
 
     companion object{
@@ -64,6 +68,7 @@ abstract class AppDatabase: RoomDatabase(){
                                 val petsDao = getInstance(context).petsDao()
                                 val doctorDao = getInstance(context).doctorDao()
                                 val appointmentDao = getInstance(context).appointmentDao()
+                                val petFactDao = getInstance(context).petFactDao()
 
                                 //creamos las semillas de los insert de usuarios
                                 val userSeed = listOf(
@@ -103,7 +108,10 @@ abstract class AppDatabase: RoomDatabase(){
                                     petsSeed.forEach { petsDao.insert(it) }
                                 }
 
+<<<<<<< Updated upstream
                                 //  Doctores y sus horarios
+=======
+
                                 val doctorsSeed = listOf(
                                     DoctorEntity(
                                         name = "Dra. María González",
@@ -172,6 +180,66 @@ abstract class AppDatabase: RoomDatabase(){
                                         )
                                     )
                                     citaSeed.forEach { appointmentDao.insert(it) }
+                                }
+
+                                // --- PetFacts seed (Datos curiosos) ---
+                                if (petFactDao.count() == 0) {
+                                    val petFactsSeed = listOf(
+                                        // Datos sobre GATOS
+                                        PetFactEntity(
+                                            type = "cat",
+                                            title = "Datos sobre gatos",
+                                            fact = "Los gatos duermen entre 13 y 16 horas al día, ¡más de la mitad de su vida!"
+                                        ),
+                                        PetFactEntity(
+                                            type = "cat",
+                                            title = "Datos sobre gatos",
+                                            fact = "Los gatos tienen 32 músculos en cada oreja, permitiéndoles rotarlas 180 grados."
+                                        ),
+                                        PetFactEntity(
+                                            type = "cat",
+                                            title = "Datos sobre gatos",
+                                            fact = "El ronroneo de un gato puede ayudar a sanar huesos y reducir el estrés."
+                                        ),
+                                        PetFactEntity(
+                                            type = "cat",
+                                            title = "Datos sobre gatos",
+                                            fact = "Los gatos pueden hacer más de 100 sonidos vocales diferentes."
+                                        ),
+                                        PetFactEntity(
+                                            type = "cat",
+                                            title = "Datos sobre gatos",
+                                            fact = "Un gato puede saltar hasta 6 veces su longitud en un solo salto."
+                                        ),
+
+                                        // Datos sobre PERROS
+                                        PetFactEntity(
+                                            type = "dog",
+                                            title = "Datos sobre perros",
+                                            fact = "Los perros tienen un sentido del olfato 10,000 veces más fuerte que los humanos."
+                                        ),
+                                        PetFactEntity(
+                                            type = "dog",
+                                            title = "Datos sobre perros",
+                                            fact = "La nariz de cada perro es única, como las huellas dactilares humanas."
+                                        ),
+                                        PetFactEntity(
+                                            type = "dog",
+                                            title = "Datos sobre perros",
+                                            fact = "Los perros pueden entender hasta 250 palabras y gestos diferentes."
+                                        ),
+                                        PetFactEntity(
+                                            type = "dog",
+                                            title = "Datos sobre perros",
+                                            fact = "Los cachorros nacen sordos, ciegos y sin dientes."
+                                        ),
+                                        PetFactEntity(
+                                            type = "dog",
+                                            title = "Datos sobre perros",
+                                            fact = "Los perros sudan a través de sus patas, no por jadear."
+                                        )
+                                    )
+                                    petFactsSeed.forEach { petFactDao.insertFact(it) }
                                 }
                             }
                         }
