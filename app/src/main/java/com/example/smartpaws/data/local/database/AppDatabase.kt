@@ -10,8 +10,8 @@ import com.example.smartpaws.data.local.appointment.AppointmentEntity
 import com.example.smartpaws.data.local.doctors.DoctorDao
 import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
-import com.example.smartpaws.data.local.pets.PetFactEntity
 import com.example.smartpaws.data.local.pets.PetFactDao
+import com.example.smartpaws.data.local.pets.PetFactEntity
 import com.example.smartpaws.data.local.pets.PetsDao
 import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.local.user.UserDao
@@ -32,37 +32,28 @@ import kotlinx.coroutines.launch
     version = 6,
     exportSchema = false
 )
-abstract class AppDatabase: RoomDatabase(){
-    //integramos el DAO de cada entidad
+abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun petsDao(): PetsDao
     abstract fun doctorDao(): DoctorDao
     abstract fun appointmentDao(): AppointmentDao
     abstract fun petFactDao(): PetFactDao
 
-
-    companion object{
-
-        //variable para instanciar la BD
+    companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
-        //variable para el nombre
         private const val DB_NAME = "ui_navegacion.db"
 
-        //obtener la instancia unica de BD
         fun getInstance(context: Context): AppDatabase {
-            //construimos la BD
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    //definir una funcion que se ejecuta unicamente cuando es la 1era vez
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            //lanzamos una corrutina para ejecutar los insert
                             CoroutineScope(Dispatchers.IO).launch {
                                 val userDao = getInstance(context).userDao()
                                 val petsDao = getInstance(context).petsDao()
@@ -70,7 +61,6 @@ abstract class AppDatabase: RoomDatabase(){
                                 val appointmentDao = getInstance(context).appointmentDao()
                                 val petFactDao = getInstance(context).petFactDao()
 
-                                //creamos las semillas de los insert de usuarios
                                 val userSeed = listOf(
                                     UserEntity(
                                         name = "Admin",
@@ -85,167 +75,50 @@ abstract class AppDatabase: RoomDatabase(){
                                         password = "Jose123!"
                                     )
                                 )
-                                //INSERTAR SI NO HAY REGISTRO EN LA TABLA
                                 if (userDao.count() == 0) {
                                     userSeed.forEach { userDao.insert(it) }
                                 }
 
-                                //creamos las semillas de los insert de mascotas
                                 val petsSeed = listOf(
                                     PetsEntity(
-                                        userId = 1, name = "Firulais", especie = "Perro", fechaNacimiento = "2020-05-15", peso = 12.5f, genero = "M", color = "Café", notas = "Le gusta jugar con pelotas"
+                                        userId = 1,
+                                        name = "Firulais",
+                                        especie = "Perro",
+                                        fechaNacimiento = "2020-05-15",
+                                        peso = 12.5f,
+                                        genero = "M",
+                                        color = "Café",
+                                        notas = "Le gusta jugar con pelotas"
                                     ),
                                     PetsEntity(
-                                        userId = 1, name = "Michi", especie = "Gato", fechaNacimiento = "2021-08-20", peso = 4.2f, genero = "F", color = "Gris", notas = "Muy dormilona"
+                                        userId = 1,
+                                        name = "Michi",
+                                        especie = "Gato",
+                                        fechaNacimiento = "2021-08-20",
+                                        peso = 4.2f,
+                                        genero = "F",
+                                        color = "Gris",
+                                        notas = "Muy dormilona"
                                     ),
                                     PetsEntity(
-                                        userId = 2,  name = "Rex", especie = "Perro", fechaNacimiento = "2019-03-10", peso = 25.0f, genero = "M", color = "Negro", notas = "Muy protector"
+                                        userId = 2,
+                                        name = "Rex",
+                                        especie = "Perro",
+                                        fechaNacimiento = "2019-03-10",
+                                        peso = 25.0f,
+                                        genero = "M",
+                                        color = "Negro",
+                                        notas = "Muy protector"
                                     )
                                 )
-
-                                //INSERTAR SI NO HAY REGISTRO EN LA TABLA
                                 if (petsDao.count() == 0) {
                                     petsSeed.forEach { petsDao.insert(it) }
                                 }
 
-<<<<<<< Updated upstream
                                 //  Doctores y sus horarios
-=======
-
-                                val doctorsSeed = listOf(
-                                    DoctorEntity(
-                                        name = "Dra. María González",
-                                        specialty = "Veterinario General",
-                                        phone = "987654321",
-                                        email = "maria@smartpaws.cl"
-                                    ),
-                                    DoctorEntity(
-                                        name = "Dr. Carlos Ruiz",
-                                        specialty = "Cirujano Veterinario",
-                                        phone = "987654322",
-                                        email = "carlos@smartpaws.cl"
-                                    )
-                                )
-
-                                if (doctorDao.count() == 0) {
-                                    doctorsSeed.forEachIndexed { index, doctor ->
-                                        val doctorId = doctorDao.insert(doctor)  //
-
-                                        // Horarios para cada doctor
-                                        val schedules = when(index) {
-                                            0 -> listOf( // Dra. María (Lunes a Viernes)
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Lunes", startTime = "09:00", endTime = "18:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "09:00", endTime = "18:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Miércoles", startTime = "09:00", endTime = "18:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "09:00", endTime = "18:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "09:00", endTime = "18:00")
-                                            )
-                                            1 -> listOf( // Dr. Carlos (Martes, Jueves, Sábado)
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "10:00", endTime = "14:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "10:00", endTime = "14:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Sábado", startTime = "09:00", endTime = "13:00")
-                                            )
-                                            else -> emptyList()
-                                        }
-                                        doctorDao.insertSchedules(schedules)
-                                    }
-                                }
-
-                                // --- Citas seed ---
-                                if (appointmentDao.count() == 0) {
-                                    val citaSeed = listOf(
-                                        AppointmentEntity(
-                                            userId = 1,
-                                            petId = 1,
-                                            doctorId = 1,
-                                            date = "2025-10-22",
-                                            time = "10:30",
-                                            notes = "Vacunación anual"
-                                        ),
-                                        AppointmentEntity(
-                                            userId = 1,
-                                            petId = 2,
-                                            doctorId = 2,
-                                            date = "2025-10-25",
-                                            time = "15:00",
-                                            notes = "Control dental"
-                                        ),
-                                        AppointmentEntity(
-                                            userId = 2,
-                                            petId = 3,
-                                            doctorId = 1,
-                                            date = "2025-10-28",
-                                            time = "09:00",
-                                            notes = "Chequeo general"
-                                        )
-                                    )
-                                    citaSeed.forEach { appointmentDao.insert(it) }
-                                }
-
-                                // --- PetFacts seed (Datos curiosos) ---
-                                if (petFactDao.count() == 0) {
-                                    val petFactsSeed = listOf(
-                                        // Datos sobre GATOS
-                                        PetFactEntity(
-                                            type = "cat",
-                                            title = "Datos sobre gatos",
-                                            fact = "Los gatos duermen entre 13 y 16 horas al día, ¡más de la mitad de su vida!"
-                                        ),
-                                        PetFactEntity(
-                                            type = "cat",
-                                            title = "Datos sobre gatos",
-                                            fact = "Los gatos tienen 32 músculos en cada oreja, permitiéndoles rotarlas 180 grados."
-                                        ),
-                                        PetFactEntity(
-                                            type = "cat",
-                                            title = "Datos sobre gatos",
-                                            fact = "El ronroneo de un gato puede ayudar a sanar huesos y reducir el estrés."
-                                        ),
-                                        PetFactEntity(
-                                            type = "cat",
-                                            title = "Datos sobre gatos",
-                                            fact = "Los gatos pueden hacer más de 100 sonidos vocales diferentes."
-                                        ),
-                                        PetFactEntity(
-                                            type = "cat",
-                                            title = "Datos sobre gatos",
-                                            fact = "Un gato puede saltar hasta 6 veces su longitud en un solo salto."
-                                        ),
-
-                                        // Datos sobre PERROS
-                                        PetFactEntity(
-                                            type = "dog",
-                                            title = "Datos sobre perros",
-                                            fact = "Los perros tienen un sentido del olfato 10,000 veces más fuerte que los humanos."
-                                        ),
-                                        PetFactEntity(
-                                            type = "dog",
-                                            title = "Datos sobre perros",
-                                            fact = "La nariz de cada perro es única, como las huellas dactilares humanas."
-                                        ),
-                                        PetFactEntity(
-                                            type = "dog",
-                                            title = "Datos sobre perros",
-                                            fact = "Los perros pueden entender hasta 250 palabras y gestos diferentes."
-                                        ),
-                                        PetFactEntity(
-                                            type = "dog",
-                                            title = "Datos sobre perros",
-                                            fact = "Los cachorros nacen sordos, ciegos y sin dientes."
-                                        ),
-                                        PetFactEntity(
-                                            type = "dog",
-                                            title = "Datos sobre perros",
-                                            fact = "Los perros sudan a través de sus patas, no por jadear."
-                                        )
-                                    )
-                                    petFactsSeed.forEach { petFactDao.insertFact(it) }
-                                }
                             }
                         }
                     })
-
-                    //destruyo todos los elementos anteriores
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
