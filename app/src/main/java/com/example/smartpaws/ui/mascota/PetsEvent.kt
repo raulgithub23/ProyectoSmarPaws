@@ -1,10 +1,10 @@
 package com.example.smartpaws.ui.mascota
 
-import com.example.smartpaws.data.model.Mascota
+import com.example.smartpaws.data.local.pets.PetsEntity
 
 sealed class PetsEvent {
-    data class EditPetInformation(val pet: Mascota) : PetsEvent()
-    data class RemovePetFromUser(val petId: Int) : PetsEvent()
-
-    data class AddNewPet(val newPet: Mascota) : PetsEvent()
+    data class AddNewPet(val pet: PetsEntity) : PetsEvent()
+    data class EditPetInformation(val pet: PetsEntity) : PetsEvent()
+    data class RemovePetFromUser(val pet: PetsEntity) : PetsEvent()
+    data class LoadUserPets(val userId: Long) : PetsEvent()
 }
