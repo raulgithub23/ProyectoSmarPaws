@@ -2,6 +2,8 @@ package com.example.smartpaws.data.repository
 
 import com.example.smartpaws.data.local.pets.PetsDao
 import com.example.smartpaws.data.local.pets.PetsEntity
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class PetsRepository(
     private val petsDao: PetsDao
@@ -85,4 +87,15 @@ class PetsRepository(
             Result.failure(e)
         }
     }
+
+    fun observePetsByUser(userId: Long): Flow<Result<List<PetsEntity>>> = flow {
+        try {
+            petsDao.observePetsByUser(userId).collect { pets ->
+                emit(Result.success(pets))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
 }

@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PetsDao {
@@ -31,4 +32,7 @@ interface PetsDao {
 
     @Query("SELECT COUNT(*) FROM pets")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM pets WHERE userId = :userId")
+    fun observePetsByUser(userId: Long): Flow<List<PetsEntity>>
 }
