@@ -1,10 +1,12 @@
 package com.example.smartpaws
 
 import AppNavGraph
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import com.example.smartpaws.viewmodel.HistoryViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -43,6 +46,7 @@ Tenemos que pensar en él como una "lona base" sobre la cual vas a pintar tu UI.
 * Si cambias el tema a dark mode, colorScheme.background
 * cambia automáticamente y el Surface pinta la pantalla con el nuevo color.
 * */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable // Indica que esta función dibuja UI
 fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     // ====== NUEVO: construcción de dependencias (Composition Root) ======
@@ -84,7 +88,10 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
    * */
     val petsRepository = PetsRepository(db.petsDao())
     val petsViewModel: PetsViewModel = viewModel(
-        factory = PetsViewModelFactory(petsRepository)
+        factory = PetsViewModelFactory(
+            petsRepository,
+            authViewModel = authViewModel
+        )
     )
 
 

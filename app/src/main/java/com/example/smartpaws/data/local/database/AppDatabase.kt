@@ -103,7 +103,7 @@ abstract class AppDatabase: RoomDatabase(){
                                     petsSeed.forEach { petsDao.insert(it) }
                                 }
 
-                                // 3️⃣ TERCERO: Doctores y sus horarios
+                                //  Doctores y sus horarios
                                 val doctorsSeed = listOf(
                                     DoctorEntity(
                                         name = "Dra. María González",
@@ -176,7 +176,6 @@ abstract class AppDatabase: RoomDatabase(){
                             }
                         }
                     })
-
 
                     //destruyo todos los elementos anteriores
                     .fallbackToDestructiveMigration()
