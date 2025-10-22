@@ -1,12 +1,10 @@
 package com.example.smartpaws.ui.mascota
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -14,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -32,100 +31,97 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartpaws.data.model.Mascota
-import com.example.smartpaws.ui.theme.SMARTPAWSTheme
+import com.example.smartpaws.data.local.pets.PetsEntity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ButtonDefaults
 
 @Composable
 fun PetCard(
-    pet: Mascota,
-//    onClick: () -> Unit
+    pet: PetsEntity,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    fun displayValue(value: Any?, suffix: String = ""): String {
+        return value?.toString()?.let { "$it$suffix" } ?: "<No asignado>"
+    }
+
     Card(
-//        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiary
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        var expanded by rememberSaveable() { mutableStateOf(false) }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.AccountBox,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier
-                .weight(1f)) {
-                Text(
-                    text = pet.nombre,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "${pet.especie} - ${pet.raza}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
-            }
-
-            IconButton(
-                onClick = { expanded = !expanded }
-            ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = null
-                )
-            }
-        }
-
-        if (expanded) {
+        Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(
+                    imageVector = Icons.Filled.AccountBox,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = pet.name.ifBlank { "<Sin nombre>" },
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = pet.especie.ifBlank { "<No asignado>" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
+
+                IconButton(
+                    onClick = { expanded = !expanded }
+                ) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null
+                    )
+                }
+
+                // Botón de edición
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Editar mascota"
+                    )
+                }
+
+                // Botón de eliminar
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Eliminar mascota"
+                    )
+                }
+            }
+
+            if (expanded) {
                 Text(
-                    text = "Fecha de nacimiento: ${pet.fechaNacimiento}\n" +
-                            "Peso: ${pet.peso} kg\n" +
-                            "Color: ${pet.color}\n" +
-                            "Notas: ${pet.notas}",
+                    text = """
+                        Fecha de nacimiento: ${displayValue(pet.fechaNacimiento)}
+                        Peso: ${displayValue(pet.peso, " kg")}
+                        Color: ${displayValue(pet.color)}
+                        Notas: ${displayValue(pet.notas)}
+                    """.trimIndent(),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.DarkGray
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE, widthDp = 320)
-@Composable
-fun PetCardPreview() {
-    SMARTPAWSTheme(dynamicColor = false) {
-        PetCard(
-            pet = Mascota(
-                id = 1,
-                nombre = "Max",
-                especie = "Perro",
-                raza = "Labrador Retriever",
-                fechaNacimiento = "2021-05-10",
-                peso = 25.4f,
-                genero = "M",
-                color = "Dorado",
-                chip = "CHP-00123",
-                notas = "Muy amigable y activo",
-                estado = true,
-                idUsuario = 101
-            )
-        )
     }
 }

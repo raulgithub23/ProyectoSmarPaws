@@ -20,12 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.example.smartpaws.data.model.Mascota
+import com.example.smartpaws.data.local.pets.PetsEntity
 
 @Composable
 fun DialogAddPetForm(
+    userId: Long,
+    initialPet: PetsEntity? = null,
     onDismiss: () -> Unit,
-    onSubmit: (Mascota) -> Unit
+    onSavePet: (PetsEntity) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -43,7 +45,7 @@ fun DialogAddPetForm(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Agregar Nueva Mascota",
+                        text = if (initialPet == null) "Agregar Nueva Mascota" else "Editar Mascota",
                         style = MaterialTheme.typography.titleLarge
                     )
                     IconButton(onClick = onDismiss) {
@@ -55,12 +57,15 @@ fun DialogAddPetForm(
                 }
 
                 AddPetForm(
-                    onSubmit = {
-                        onSubmit(it)
-                    },
+                    userId = userId,
+                    onSavePet = onSavePet,
+                    initialPet = initialPet,
+                    onDismiss = onDismiss,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
         }
     }
 }
+
+

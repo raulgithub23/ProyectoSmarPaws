@@ -21,31 +21,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.smartpaws.data.model.Mascota
-
+import com.example.smartpaws.data.local.pets.PetsEntity
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPetForm(
-    onSubmit: (Mascota) -> Unit,
+    userId: Long,
+    onSavePet: (PetsEntity) -> Unit,
+    onDismiss: () -> Unit,
+    initialPet: PetsEntity? = null,
     modifier: Modifier = Modifier
 ) {
-    var nombre by rememberSaveable { mutableStateOf("") }
-    var especie by rememberSaveable { mutableStateOf("Perro") }
-    var especieExpanded by rememberSaveable { mutableStateOf(false) }
-    var raza by rememberSaveable { mutableStateOf("") }
-    var fechaNacimiento by rememberSaveable { mutableStateOf("") }
-    var peso by rememberSaveable { mutableStateOf("") }
-    var genero by rememberSaveable { mutableStateOf("M") }
-    var generoExpanded by rememberSaveable { mutableStateOf(false) }
-    var color by rememberSaveable { mutableStateOf("") }
-    var chip by rememberSaveable { mutableStateOf("") }
-    var notas by rememberSaveable { mutableStateOf("") }
-
-    val especiesOptions = listOf("Perro", "Gato")
-    val generoOptions = listOf("M", "F")
+    // Estados inicializados según si es edición o creación
+    var nombre by rememberSaveable { mutableStateOf(initialPet?.name ?: "") }
+    var especie by rememberSaveable { mutableStateOf(initialPet?.especie ?: "Perro") }
+    var fechaNacimiento by rememberSaveable { mutableStateOf(initialPet?.fechaNacimiento ?: "") }
+    var peso by rememberSaveable { mutableStateOf(initialPet?.peso?.toString() ?: "") }
+    var genero by rememberSaveable { mutableStateOf(initialPet?.genero ?: "M") }
+    var color by rememberSaveable { mutableStateOf(initialPet?.color ?: "") }
+    var notas by rememberSaveable { mutableStateOf(initialPet?.notas ?: "") }
 
     Column(modifier = modifier.padding(16.dp)) {
-        Text(text = "Agregar Nueva Mascota", style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = if (initialPet == null) "Agregar Nueva Mascota" else "Editar Mascota",
+            style = MaterialTheme.typography.titleLarge
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -58,41 +57,12 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        ExposedDropdownMenuBox(
-            expanded = especieExpanded,
-            onExpandedChange = { especieExpanded = it }
-        ) {
-            OutlinedTextField(
-                value = especie,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Especie") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = especieExpanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = especieExpanded,
-                onDismissRequest = { especieExpanded = false }
-            ) {
-                especiesOptions.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        onClick = {
-                            especie = option
-                            especieExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = raza,
-            onValueChange = { raza = it },
-            label = { Text("Raza") },
+        // Dropdown de especie
+        DropdownSelector(
+            label = "Especie",
+            options = listOf("Perro", "Gato"),
+            selectedOption = especie,
+            onOptionSelected = { especie = it },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -116,34 +86,14 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        ExposedDropdownMenuBox(
-            expanded = generoExpanded,
-            onExpandedChange = { generoExpanded = it }
-        ) {
-            OutlinedTextField(
-                value = genero,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Género") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = generoExpanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = generoExpanded,
-                onDismissRequest = { generoExpanded = false }
-            ) {
-                generoOptions.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        onClick = {
-                            genero = option
-                            generoExpanded = false
-                        }
-                    )
-                }
-            }
-        }
+        // Dropdown de género
+        DropdownSelector(
+            label = "Género",
+            options = listOf("M", "F"),
+            selectedOption = genero,
+            onOptionSelected = { genero = it },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -151,15 +101,6 @@ fun AddPetForm(
             value = color,
             onValueChange = { color = it },
             label = { Text("Color") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = chip,
-            onValueChange = { chip = it },
-            label = { Text("Chip") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -176,25 +117,23 @@ fun AddPetForm(
 
         Button(
             onClick = {
-                val newPet = Mascota(
-                    id = (0..1000).random(),
-                    nombre = nombre,
+                val petToSave = PetsEntity(
+                    id = initialPet?.id ?: 0L,
+                    userId = userId,
+                    name = nombre,
                     especie = especie,
-                    raza = raza,
-                    fechaNacimiento = fechaNacimiento,
-                    peso = peso.toFloatOrNull() ?: 0f,
+                    fechaNacimiento = fechaNacimiento.ifBlank { null },
+                    peso = peso.toFloatOrNull(),
                     genero = genero,
-                    color = color,
-                    chip = chip,
-                    notas = notas,
-                    estado = true,
-                    idUsuario = 0
+                    color = color.ifBlank { null },
+                    notas = notas.ifBlank { null }
                 )
-                onSubmit(newPet)
+                onSavePet(petToSave)
+                onDismiss()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Guardar Mascota")
+            Text(text = if (initialPet == null) "Guardar Mascota" else "Actualizar Mascota")
         }
     }
 }
