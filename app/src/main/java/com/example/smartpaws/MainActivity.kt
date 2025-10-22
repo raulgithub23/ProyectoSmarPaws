@@ -13,7 +13,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.smartpaws.data.local.database.AppDatabase
 import com.example.smartpaws.data.repository.AppointmentRepository
+import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.data.repository.UserRepository
+import com.example.smartpaws.ui.mascota.PetsViewModel
+import com.example.smartpaws.ui.mascota.PetsViewModelFactory
 import com.example.smartpaws.ui.theme.SMARTPAWSTheme
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.AuthViewModelFactory
@@ -76,6 +79,15 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     // La factory es necesaria porque el ViewModel necesita recibir parámetros
     // (el repository) en su constructor, y sin factory Android no sabría cómo crearlo.
 
+    /*
+   * CREACION DE DEPENDENCIAS PARA PETSCREEN
+   * */
+    val petsRepository = PetsRepository(db.petsDao())
+    val petsViewModel: PetsViewModel = viewModel(
+        factory = PetsViewModelFactory(petsRepository)
+    )
+
+
     // ====== TU NAVEGACIÓN ORIGINAL ======
     val navController = rememberNavController() // Controlador de navegación (igual que antes)
     SMARTPAWSTheme(dynamicColor = false) { // Provee colores/tipografías Material 3 (igual que antes)
@@ -87,8 +99,8 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
             AppNavGraph(
                 navController = navController,
                 authViewModel = authViewModel, // VM para Login/Register
-                historyViewModel = historyViewModel // VM para Historial de citas
-
+                historyViewModel = historyViewModel, // VM para Historial de citas
+                petsViewModel = petsViewModel
             )
             // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
             // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }
