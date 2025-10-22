@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class LoginUiState(                                   // Estado de la pantalla Login
+    val userId: Long? = null,
     val email: String = "",                                // Campo email
     val pass: String = "",                                 // Campo contraseña (texto)
     val emailError: String? = null,                        // Error de email
@@ -90,22 +91,34 @@ class AuthViewModel(
             _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Seteamos loading
             delay(500)                                      // Simulamos tiempo de verificación
 
-            //6.- Se cambia lo anterior por esto ✅ NUEVO: consulta real a la BD vía repositorio
             val result = repository.login(s.email.trim(), s.pass)
 
             // Interpreta el resultado y actualiza estado
             _login.update {
                 if (result.isSuccess) {
-                    it.copy(isSubmitting = false, success = true, errorMsg = null) // OK: éxito
+                    val user = result.getOrNull()
+                    it.copy(
+                        isSubmitting = false,
+                        success = true,
+                        errorMsg = null,
+                        userId = user?.id
+                    )
                 } else {
-                    it.copy(isSubmitting = false, success = false,
-                        errorMsg = result.exceptionOrNull()?.message ?: "Error de autenticación")
+                    it.copy(
+                        isSubmitting = false,
+                        success = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error de autenticación"
+                    )
                 }
             }
         }
     }
     fun clearLoginResult() {                                // Limpia banderas tras navegar
         _login.update { it.copy(success = false, errorMsg = null) }
+    }
+
+    fun logout() {
+        _login.update { LoginUiState() } // Reset completo del estado
     }
 
     // ----------------- REGISTRO: handlers y envío -----------------
