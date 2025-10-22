@@ -1,5 +1,7 @@
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -34,11 +36,13 @@ import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModel
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    historyViewModel: HistoryViewModel
+    historyViewModel: HistoryViewModel,
+    petsViewModel: PetsViewModel
 ) {
 
     NavHost(
@@ -86,10 +90,7 @@ fun AppNavGraph(
 
         composable(Route.Pets.path) {
             MainScaffoldWrapper(navController) {
-                val viewModel: PetsViewModel = viewModel(
-                    viewModelStoreOwner = LocalActivity.current as ComponentActivity
-                )
-                PetsScreen(viewModel = viewModel)
+                PetsScreen(viewModel = petsViewModel)
             }
         }
 
