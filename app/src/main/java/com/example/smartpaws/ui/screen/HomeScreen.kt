@@ -1,204 +1,214 @@
 package com.example.smartpaws.ui.screen
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.smartpaws.R
-import com.example.smartpaws.R.drawable
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
+import com.example.smartpaws.data.local.pets.PetFactEntity
 import com.example.smartpaws.viewmodel.HomeViewModel
 
-
-//ACÁ VA ESTAR LOS PRINCIPAL DE SMARTPAWS
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel
+    viewModel: HomeViewModel,
+    onNavigateToAppointments: () -> Unit = {}
 ) {
+    val homeState by viewModel.homeState.collectAsState()
+
     val bg = Color(0xFFC0E6BA)
     val cardColor = Color(0xFFEAF9E7)
     val textColor = Color(0xFF013237)
 
-    // Observar datos del ViewModel
-    val catFact by viewModel.randomCatFact.collectAsState()
-    val upcomingAppointments by viewModel.upcomingAppointments.collectAsState()
-
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(bg)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Título de bienvenida
-        item {
-            Text(
-                text = "¡Bienvenido a SmartPaws!",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Título de bienvenida
+            item {
+                Text(
+                    text = "¡Bienvenido a SmartPaws!",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
-        // Tarjeta de dato curioso
-        item {
-            catFact?.let { fact ->
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = cardColor
+            // Tarjeta de dato curioso
+            item {
+                homeState.currentFact?.let { fact ->
+                    PetFactCard(
+                        fact = fact,
+                        cardColor = cardColor,
+                        textColor = textColor,
+                        onRefresh = { viewModel.refreshFact() }
                     )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.gatofrentev1),
-                            contentDescription = "Mascota",
-                            modifier = Modifier.size(100.dp)
-                        )
+                }
+            }
 
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Lightbulb,
-                                    contentDescription = null,
-                                    tint = textColor,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = fact.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = textColor,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Text(
-                                text = fact.fact,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = textColor
-                            )
-                        }
+            // Sección de próximas citas
+            if (homeState.upcomingAppointments.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "Próximas Citas",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
+                }
+
+                items(homeState.upcomingAppointments) { appointment ->
+                    AppointmentCard(
+                        appointment = appointment,
+                        cardColor = cardColor,
+                        textColor = textColor
+                    )
+                }
+            } else {
+                item {
+                    NoAppointmentsCard(
+                        cardColor = cardColor,
+                        textColor = textColor,
+                        onCreateAppointment = onNavigateToAppointments
+                    )
                 }
             }
         }
 
-        // Sección de próximas citas
-        if (upcomingAppointments.isNotEmpty()) {
-            item {
+        // Indicador de carga
+        if (homeState.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+
+        // Mensaje de error
+        homeState.errorMsg?.let { error ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                action = {
+                    TextButton(onClick = { viewModel.clearError() }) {
+                        Text("OK")
+                    }
+                }
+            ) {
+                Text(error)
+            }
+        }
+    }
+}
+
+// Tarjeta de dato curioso con botón refrescar
+@Composable
+fun PetFactCard(
+    fact: PetFactEntity,
+    cardColor: Color,
+    textColor: Color,
+    onRefresh: () -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardColor
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Image(
+                painter = painterResource(
+                    if (fact.type == "cat") R.drawable.gatofrentev1
+                    else R.drawable.perrofrentev1  // Cambia esto cuando tengas la imagen del perro
+                ),
+                contentDescription = "Mascota",
+                modifier = Modifier.size(100.dp)
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CalendarToday,
+                        imageVector = Icons.Default.Lightbulb,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = textColor,
+                        modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Próximas Citas",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
+                        text = fact.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = textColor,
                         fontWeight = FontWeight.Bold
                     )
                 }
-            }
+                Text(
+                    text = fact.fact,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
 
-            //items(upcomingAppointments) { appointment ->
-              //  AppointmentCard(
-                //    appointment = appointment,
-                  //  cardColor = cardColor,
-                    //textColor = textColor
-                //)
-            //}
-        } else {
-            item {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = cardColor
-                    )
+                // Botón refrescar
+                TextButton(
+                    onClick = onRefresh,
+                    modifier = Modifier.align(Alignment.End)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.EventAvailable,
-                            contentDescription = null,
-                            tint = textColor,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "No hay citas programadas",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = textColor,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "¡Agenda una cita para tu mascota!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = textColor.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refrescar",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Otro dato", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
     }
 }
 
-/*@Composable
+// Tarjeta de cita (anuncio)
+@Composable
 fun AppointmentCard(
     appointment: AppointmentWithDetails,
     cardColor: Color,
@@ -216,17 +226,23 @@ fun AppointmentCard(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Icono según tipo de mascota
-            Icon(
-                imageVector = Icons.Default.Pets,
-                contentDescription = null,
-                tint = textColor,
-                modifier = Modifier.size(48.dp)
-            )
+            // Icono de alerta/recordatorio
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = textColor.copy(alpha = 0.1f),
+                modifier = Modifier.size(56.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EventNote,
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = appointment.petName,
@@ -234,14 +250,6 @@ fun AppointmentCard(
                     color = textColor,
                     fontWeight = FontWeight.Bold
                 )
-
-                if (appointment.petType != null) {
-                    Text(
-                        text = appointment.petType,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = textColor.copy(alpha = 0.6f)
-                    )
-                }
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -254,9 +262,10 @@ fun AppointmentCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "${appointment.appointment.date} - ${appointment.appointment.time}",
+                        text = "${appointment.date} - ${appointment.time}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = textColor
+                        color = textColor,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
@@ -273,16 +282,16 @@ fun AppointmentCard(
                     Text(
                         text = appointment.doctorName,
                         style = MaterialTheme.typography.bodySmall,
-                        color = textColor.copy(alpha = 0.7f)
+                        color = textColor.copy(alpha = 0.8f)
                     )
                 }
 
-                if (appointment.appointment.notes != null) {
+                if (!appointment.notes.isNullOrBlank()) {
                     Text(
-                        text = appointment.appointment.notes,
+                        text = appointment.notes,
                         style = MaterialTheme.typography.bodySmall,
                         color = textColor.copy(alpha = 0.6f),
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        fontStyle = FontStyle.Italic
                     )
                 }
             }
@@ -290,4 +299,56 @@ fun AppointmentCard(
     }
 }
 
- */
+// Tarjeta cuando no hay citas
+@Composable
+fun NoAppointmentsCard(
+    cardColor: Color,
+    textColor: Color,
+    onCreateAppointment: () -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardColor
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.EventAvailable,
+                contentDescription = null,
+                tint = textColor.copy(alpha = 0.5f),
+                modifier = Modifier.size(64.dp)
+            )
+            Text(
+                text = "No tienes citas pendientes",
+                style = MaterialTheme.typography.titleMedium,
+                color = textColor,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "¡Agenda una cita para el cuidado de tu mascota!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = textColor.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
+
+            Button(
+                onClick = onCreateAppointment,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = textColor
+                )
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Agendar Cita")
+            }
+        }
+    }
+}

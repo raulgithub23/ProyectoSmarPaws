@@ -34,6 +34,7 @@ import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModel
+import com.example.smartpaws.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -42,7 +43,8 @@ fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     historyViewModel: HistoryViewModel,
-    petsViewModel: PetsViewModel
+    petsViewModel: PetsViewModel,
+    homeViewModel: HomeViewModel
 ) {
 
     NavHost(
@@ -84,7 +86,7 @@ fun AppNavGraph(
         // Envolvemos todas las pantallas autenticadas en un Scaffold compartido
         composable(Route.Home.path) {
             MainScaffoldWrapper(navController) {
-                HomeScreen()
+                HomeScreen(viewModel = homeViewModel)
             }
         }
 
