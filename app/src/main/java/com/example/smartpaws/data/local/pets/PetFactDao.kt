@@ -28,4 +28,7 @@ interface PetFactDao {
 
     @Delete
     suspend fun deleteFact(fact: PetFactEntity)
+
+    @Query("SELECT * FROM pet_facts WHERE id = :id")
+    suspend fun getFactById(id: Long): PetFactEntity?
 }
