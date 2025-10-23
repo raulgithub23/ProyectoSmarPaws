@@ -1,4 +1,6 @@
 import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -38,6 +41,7 @@ import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModel
+import com.example.smartpaws.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -46,14 +50,15 @@ fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     historyViewModel: HistoryViewModel,
-    petsViewModel: PetsViewModel,
     appointmentRepository: AppointmentRepository,
     doctorRepository: DoctorRepository,
+    petsViewModel: PetsViewModel,
+    homeViewModel: HomeViewModel
 ) {
 
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path,
+        startDestination = Route.Login.path, // Comienza en Login
         modifier = Modifier.fillMaxSize()
     ) {
         // ========== PANTALLAS DE AUTENTICACIÓN (sin Scaffold) ==========
@@ -81,7 +86,7 @@ fun AppNavGraph(
                     }
                 },
                 onGoLogin = {
-                    navController.popBackStack()
+                    navController.popBackStack() // Vuelve al login
                 }
             )
         }
@@ -90,7 +95,7 @@ fun AppNavGraph(
         // Envolvemos todas las pantallas autenticadas en un Scaffold compartido
         composable(Route.Home.path) {
             MainScaffoldWrapper(navController) {
-                HomeScreen()
+                HomeScreen(viewModel = homeViewModel)
             }
         }
 

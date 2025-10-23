@@ -1,3 +1,4 @@
+
 package com.example.smartpaws.data.repository
 
 import com.example.smartpaws.data.local.appointment.AppointmentDao
@@ -18,6 +19,16 @@ class AppointmentRepository(
     fun getAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
         return appointmentDao.getAppointmentsByUser(userId)
     }
+
+    // NUEVO: Flow para próximas 3 citas (todas)
+    //fun getUpcomingAppointments(): Flow<List<AppointmentWithDetails>> {
+      //  return appointmentDao.getUpcomingAppointments()
+    //}
+
+    // NUEVO: Flow para próximas 3 citas de un usuario
+    //fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
+      //  return appointmentDao.getUpcomingAppointmentsByUser(userId)
+    //}
 
     // Obtener detalle con Result<T> (como el profe)
     suspend fun getAppointmentDetail(appointmentId: Long): Result<AppointmentWithDetails> {

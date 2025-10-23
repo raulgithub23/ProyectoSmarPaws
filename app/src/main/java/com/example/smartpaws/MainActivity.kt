@@ -14,6 +14,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.smartpaws.data.local.database.AppDatabase
+import com.example.smartpaws.data.local.doctors.DoctorDao
+import com.example.smartpaws.data.local.pets.PetFactDao
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository
@@ -28,6 +30,8 @@ import com.example.smartpaws.viewmodel.AuthViewModelFactory
 import com.example.smartpaws.viewmodel.HistoryViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import androidx.compose.runtime.collectAsState
+import com.example.smartpaws.viewmodel.HomeViewModel
+import com.example.smartpaws.viewmodel.HomeViewModelFactory
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -69,6 +73,10 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
 
     val doctorDao = db.doctorDao()
 
+    val petFactDao =  db.petFactDao()
+
+    val petsDao = db.petsDao()
+
     val userRepository = UserRepository(userDao)
     // ^ Repositorio que encapsula la lógica de login/registro contra Room.
 
@@ -78,12 +86,20 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     // Expone Flows reactivos para que la UI se actualice automáticamente
     // cuando cambien los datos en la base de datos.
 
+
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(userRepository)
     )
 
     val historyViewModel: HistoryViewModel = viewModel(
         factory = HistoryViewModelFactory(appointmentRepository)
+    )
+
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(
+            repository = appointmentRepository,
+            petFactDao = petFactDao
+        )
     )
     // ^ Creamos los ViewModels con factory para inyectar los repositorios.
     //   Esto reemplaza cualquier uso anterior de listas en memoria (USERS).
@@ -127,7 +143,8 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
                 petsViewModel = petsViewModel,
 //                appointmentViewModel = appointmentViewModel,
                 appointmentRepository = appointmentRepository,
-                doctorRepository = doctorRepository
+                doctorRepository = doctorRepository,
+                homeViewModel = homeViewModel
             )
             // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
             // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }
