@@ -33,7 +33,7 @@ import com.example.smartpaws.data.local.user.UserEntity
 )
 data class AppointmentEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val userId: Long,
+    val userId: Long?,
     val petId: Long,
     val doctorId: Long,
     val date: String,         // Ej: "2025-10-22"

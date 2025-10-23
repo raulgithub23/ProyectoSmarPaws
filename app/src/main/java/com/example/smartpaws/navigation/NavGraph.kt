@@ -1,6 +1,4 @@
 import android.os.Build
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,15 +8,19 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
+import com.example.smartpaws.data.repository.AppointmentRepository
+import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.navigation.Route
 import com.example.smartpaws.ui.components.AppDrawer
 import com.example.smartpaws.ui.components.AppTopBar
@@ -32,6 +34,8 @@ import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
+import com.example.smartpaws.viewmodel.AppointmentViewModel
+import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModel
 import kotlinx.coroutines.launch
@@ -42,12 +46,14 @@ fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     historyViewModel: HistoryViewModel,
-    petsViewModel: PetsViewModel
+    petsViewModel: PetsViewModel,
+    appointmentRepository: AppointmentRepository,
+    doctorRepository: DoctorRepository,
 ) {
 
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path, // Comienza en Login
+        startDestination = Route.Login.path,
         modifier = Modifier.fillMaxSize()
     ) {
         // ========== PANTALLAS DE AUTENTICACIÓN (sin Scaffold) ==========
@@ -75,7 +81,7 @@ fun AppNavGraph(
                     }
                 },
                 onGoLogin = {
-                    navController.popBackStack() // Vuelve al login
+                    navController.popBackStack()
                 }
             )
         }
@@ -103,9 +109,61 @@ fun AppNavGraph(
             }
         }
 
+//        // ========== APPOINTMENT CON PARÁMETRO petId ==========
+//        composable(
+//            route = "${Route.Appointment.path}/{petId}",
+//            arguments = listOf(
+//                navArgument("petId") {
+//                    type = NavType.LongType
+//                    defaultValue = 0L // Valor por defecto si no se pasa
+//                }
+//            )
+//        ) { backStackEntry ->
+//            val petId = backStackEntry.arguments?.getLong("petId") ?: 0L
+//
+//            MainScaffoldWrapper(navController) {
+//                AppointmentScreen(
+//                    viewModel = appointmentViewModel,
+//                    petId = petId,
+//                    onAppointmentCreated = {
+//                        // Navegar de vuelta al historial o home después de crear la cita
+//                        navController.navigate(Route.History.path) {
+//                            popUpTo(Route.Home.path)
+//                        }
+//                    }
+//                )
+//            }
+//        }
+
+        // ========== RUTA ALTERNATIVA: Appointment sin petId específico ==========
+        // Si el usuario va directamente desde el bottom bar sin seleccionar mascota
         composable(Route.Appointment.path) {
+            // Obtener userId del authViewModel
+            val loginState by authViewModel.login.collectAsState()
+            val userId = loginState.userId ?: 1L // Usar 1L por defecto para testing
+
+            // Crear el ViewModel AQUÍ con el userId correcto
+            val appointmentViewModel: AppointmentViewModel = viewModel(
+                factory = AppointmentViewModelFactory(
+                    appointmentRepository = appointmentRepository,
+                    doctorRepository = doctorRepository,
+                    userId = userId
+                ),
+                key = "appointment_$userId" // Key única por usuario
+            )
+
             MainScaffoldWrapper(navController) {
-                AppointmentScreen()
+                // Aquí podrías mostrar primero un selector de mascotas
+                // o redirigir a la pantalla de mascotas
+                AppointmentScreen(
+                    viewModel = appointmentViewModel,
+                    petId = 0L, // Valor temporal, el usuario deberá seleccionar
+                    onAppointmentCreated = {
+                        navController.navigate(Route.History.path) {
+                            popUpTo(Route.Home.path)
+                        }
+                    }
+                )
             }
         }
 
@@ -124,11 +182,9 @@ private fun MainScaffoldWrapper(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
     // Obtener la ruta actual para el bottom navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     // Helpers de navegación
     val goHome: () -> Unit = {
         navController.navigate(Route.Home.path) {
@@ -146,6 +202,7 @@ private fun MainScaffoldWrapper(
         }
     }
     val goAppointment: () -> Unit = {
+        // Navega a appointment sin petId específico
         navController.navigate(Route.Appointment.path) {
             popUpTo(Route.Home.path)
         }
@@ -157,7 +214,7 @@ private fun MainScaffoldWrapper(
     }
     val goLogin: () -> Unit = {
         navController.navigate(Route.Login.path) {
-            popUpTo(0) { inclusive = true } // Limpia todo el back stack
+            popUpTo(0) { inclusive = true }// Limpia todo el back stack
         }
     }
 
@@ -171,14 +228,6 @@ private fun MainScaffoldWrapper(
                         scope.launch { drawerState.close() }
                         goHome()
                     },
-//                    onLogin = {
-//                        scope.launch { drawerState.close() }
-//                        goLogin()
-//                    },
-//                    onRegister = {
-//                        scope.launch { drawerState.close() }
-//                        // El registro solo está disponible desde login
-//                    },
                     onUser = {
                         scope.launch { drawerState.close() }
                         goUser()
@@ -193,7 +242,7 @@ private fun MainScaffoldWrapper(
                     onOpenDrawer = { scope.launch { drawerState.open() } },
                     onHome = goHome,
                     onLogin = goLogin,
-                    onRegister = {}, // No tiene sentido desde aquí
+                    onRegister = {},
                     onUser = goUser
                 )
             },

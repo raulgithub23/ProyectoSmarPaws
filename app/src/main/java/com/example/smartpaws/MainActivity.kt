@@ -15,15 +15,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.smartpaws.data.local.database.AppDatabase
 import com.example.smartpaws.data.repository.AppointmentRepository
+import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.data.repository.UserRepository
 import com.example.smartpaws.ui.mascota.PetsViewModel
 import com.example.smartpaws.ui.mascota.PetsViewModelFactory
 import com.example.smartpaws.ui.theme.SMARTPAWSTheme
+import com.example.smartpaws.viewmodel.AppointmentViewModel
+import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.AuthViewModelFactory
 import com.example.smartpaws.viewmodel.HistoryViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
+import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -63,10 +67,13 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     // ^ Obtenemos el DAO de citas desde la DB.
     // Los DAOs contienen las queries SQL (@Query, @Insert, @Update, @Delete)
 
+    val doctorDao = db.doctorDao()
+
     val userRepository = UserRepository(userDao)
     // ^ Repositorio que encapsula la lógica de login/registro contra Room.
 
     val appointmentRepository = AppointmentRepository(appointmentDao)
+    val doctorRepository = DoctorRepository(doctorDao)
     // ^ Repositorio que encapsula la lógica de gestión de citas.
     // Expone Flows reactivos para que la UI se actualice automáticamente
     // cuando cambien los datos en la base de datos.
@@ -82,6 +89,16 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     //   Esto reemplaza cualquier uso anterior de listas en memoria (USERS).
     // La factory es necesaria porque el ViewModel necesita recibir parámetros
     // (el repository) en su constructor, y sin factory Android no sabría cómo crearlo.
+
+    val userId: Long? = authViewModel.login.collectAsState().value.userId
+
+    val appointmentViewModel: AppointmentViewModel = viewModel(
+        factory = AppointmentViewModelFactory(
+            appointmentRepository,
+            doctorRepository,
+            userId
+        )
+    )
 
     /*
    * CREACION DE DEPENDENCIAS PARA PETSCREEN
@@ -107,7 +124,10 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
                 navController = navController,
                 authViewModel = authViewModel, // VM para Login/Register
                 historyViewModel = historyViewModel, // VM para Historial de citas
-                petsViewModel = petsViewModel
+                petsViewModel = petsViewModel,
+//                appointmentViewModel = appointmentViewModel,
+                appointmentRepository = appointmentRepository,
+                doctorRepository = doctorRepository
             )
             // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
             // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }

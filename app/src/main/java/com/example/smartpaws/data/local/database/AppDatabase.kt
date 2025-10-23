@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
         DoctorScheduleEntity::class,
         AppointmentEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
@@ -94,7 +94,7 @@ abstract class AppDatabase: RoomDatabase(){
                                         userId = 1, name = "Michi", especie = "Gato", fechaNacimiento = "2021-08-20", peso = 4.2f, genero = "F", color = "Gris", notas = "Muy dormilona"
                                     ),
                                     PetsEntity(
-                                        userId = 2,  name = "Rex", especie = "Perro", fechaNacimiento = "2019-03-10", peso = 25.0f, genero = "M", color = "Negro", notas = "Muy protector"
+                                        userId = 2, name = "Rex", especie = "Perro", fechaNacimiento = "2019-03-10", peso = 25.0f, genero = "M", color = "Negro", notas = "Muy protector"
                                     )
                                 )
 
@@ -103,74 +103,121 @@ abstract class AppDatabase: RoomDatabase(){
                                     petsSeed.forEach { petsDao.insert(it) }
                                 }
 
-                                //  Doctores y sus horarios
+                                // ========== Doctores mejorados con más especialidades ==========
                                 val doctorsSeed = listOf(
                                     DoctorEntity(
-                                        name = "Dra. María González",
+                                        name = "Dr. Carlos Méndez",
                                         specialty = "Veterinario General",
-                                        phone = "987654321",
-                                        email = "maria@smartpaws.cl"
+                                        email = "carlos.mendez@smartpaws.cl",
+                                        phone = "+56912345678"
                                     ),
                                     DoctorEntity(
-                                        name = "Dr. Carlos Ruiz",
-                                        specialty = "Cirujano Veterinario",
-                                        phone = "987654322",
-                                        email = "carlos@smartpaws.cl"
+                                        name = "Dra. María González",
+                                        specialty = "Cirugía Veterinaria",
+                                        email = "maria.gonzalez@smartpaws.cl",
+                                        phone = "+56987654321"
+                                    ),
+                                    DoctorEntity(
+                                        name = "Dr. Jorge Silva",
+                                        specialty = "Animales Exóticos",
+                                        email = "jorge.silva@smartpaws.cl",
+                                        phone = "+56911223344"
+                                    ),
+                                    DoctorEntity(
+                                        name = "Dra. Ana Rojas",
+                                        specialty = "Dermatología Veterinaria",
+                                        email = "ana.rojas@smartpaws.cl",
+                                        phone = "+56922334455"
+                                    ),
+                                    DoctorEntity(
+                                        name = "Dr. Luis Pérez",
+                                        specialty = "Odontología Veterinaria",
+                                        email = "luis.perez@smartpaws.cl",
+                                        phone = "+56933445566"
                                     )
                                 )
 
+                                //INSERTAR SI NO HAY REGISTRO EN LA TABLA
                                 if (doctorDao.count() == 0) {
                                     doctorsSeed.forEachIndexed { index, doctor ->
-                                        val doctorId = doctorDao.insert(doctor)  //
+                                        val doctorId = doctorDao.insert(doctor)
 
-                                        // Horarios para cada doctor
+                                        // Horarios específicos para cada doctor según su especialidad
                                         val schedules = when(index) {
-                                            0 -> listOf( // Dra. María (Lunes a Viernes)
+                                            0 -> listOf( // Dr. Carlos Méndez - Veterinario General (Lunes a Viernes completo)
                                                 DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Lunes", startTime = "09:00", endTime = "18:00"),
                                                 DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "09:00", endTime = "18:00"),
                                                 DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Miércoles", startTime = "09:00", endTime = "18:00"),
                                                 DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "09:00", endTime = "18:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "09:00", endTime = "18:00")
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "09:00", endTime = "17:00")
                                             )
-                                            1 -> listOf( // Dr. Carlos (Martes, Jueves, Sábado)
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "10:00", endTime = "14:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "10:00", endTime = "14:00"),
-                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Sábado", startTime = "09:00", endTime = "13:00")
+                                            1 -> listOf( // Dra. María González - Cirugía (Lunes, Miércoles, Viernes)
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Lunes", startTime = "10:00", endTime = "16:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Miércoles", startTime = "10:00", endTime = "16:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "10:00", endTime = "16:00")
+                                            )
+                                            2 -> listOf( // Dr. Jorge Silva - Exóticos (Martes, Jueves, Sábado)
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "11:00", endTime = "19:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "11:00", endTime = "19:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Sábado", startTime = "09:00", endTime = "14:00")
+                                            )
+                                            3 -> listOf( // Dra. Ana Rojas - Dermatología (Mañanas Lunes a Viernes)
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Lunes", startTime = "08:00", endTime = "14:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Martes", startTime = "08:00", endTime = "14:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Miércoles", startTime = "08:00", endTime = "14:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "08:00", endTime = "14:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "08:00", endTime = "14:00")
+                                            )
+                                            4 -> listOf( // Dr. Luis Pérez - Odontología (Tardes Miércoles a Sábado)
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Miércoles", startTime = "14:00", endTime = "20:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Jueves", startTime = "14:00", endTime = "20:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Viernes", startTime = "14:00", endTime = "20:00"),
+                                                DoctorScheduleEntity(doctorId = doctorId, dayOfWeek = "Sábado", startTime = "10:00", endTime = "15:00")
                                             )
                                             else -> emptyList()
                                         }
+                                        //insertar los horarios de cada doctor
                                         doctorDao.insertSchedules(schedules)
                                     }
                                 }
 
-                                // --- Citas seed ---
+                                // --- Citas seed (ejemplos iniciales) ---
                                 if (appointmentDao.count() == 0) {
                                     val citaSeed = listOf(
                                         AppointmentEntity(
                                             userId = 1,
-                                            petId = 1,
-                                            doctorId = 1,
+                                            petId = 1, // Firulais
+                                            doctorId = 1, // Dr. Carlos Méndez
                                             date = "2025-10-22",
                                             time = "10:30",
                                             notes = "Vacunación anual"
                                         ),
                                         AppointmentEntity(
                                             userId = 1,
-                                            petId = 2,
-                                            doctorId = 2,
-                                            date = "2025-10-25",
-                                            time = "15:00",
-                                            notes = "Control dental"
+                                            petId = 2, // Michi
+                                            doctorId = 4, // Dra. Ana Rojas (Dermatología)
+                                            date = "2025-10-23",
+                                            time = "09:00",
+                                            notes = "Revisión de piel por alergia"
                                         ),
                                         AppointmentEntity(
                                             userId = 2,
-                                            petId = 3,
-                                            doctorId = 1,
-                                            date = "2025-10-28",
-                                            time = "09:00",
-                                            notes = "Chequeo general"
+                                            petId = 3, // Rex
+                                            doctorId = 2, // Dra. María González (Cirugía)
+                                            date = "2025-10-25",
+                                            time = "11:00",
+                                            notes = "Control post-operatorio"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 1, // Firulais
+                                            doctorId = 5, // Dr. Luis Pérez (Odontología)
+                                            date = "2025-10-26",
+                                            time = "15:30",
+                                            notes = "Limpieza dental"
                                         )
                                     )
+                                    //insertar las citas de ejemplo
                                     citaSeed.forEach { appointmentDao.insert(it) }
                                 }
                             }
