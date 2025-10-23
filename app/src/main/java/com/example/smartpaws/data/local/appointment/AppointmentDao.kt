@@ -25,6 +25,18 @@ interface AppointmentDao {
     """)
     fun getAllAppointments(): Flow<List<AppointmentWithDetails>>
 
+    //Obtener próximas 3 citas (todas)
+    @Query("""
+        SELECT a.*, p.name as petName, d.name as doctorName, d.specialty as doctorSpecialty
+        FROM appointments a
+        INNER JOIN pets p ON a.petId = p.id
+        INNER JOIN doctors d ON a.doctorId = d.id
+        WHERE a.date >= date('now')
+        ORDER BY a.date ASC, a.time ASC
+        LIMIT 3
+    """)
+    fun getUpcomingAppointments(): Flow<List<AppointmentWithDetails>>
+
     // Obtener citas de un usuario específico
     @Query("""
         SELECT a.*, p.name as petName, d.name as doctorName
@@ -35,6 +47,18 @@ interface AppointmentDao {
         ORDER BY a.date DESC, a.time DESC
     """)
     fun getAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>>
+
+    // Obtener próximas 3 citas de un usuario
+    @Query("""
+        SELECT a.*, p.name as petName, d.name as doctorName, d.specialty as doctorSpecialty
+        FROM appointments a
+        INNER JOIN pets p ON a.petId = p.id
+        INNER JOIN doctors d ON a.doctorId = d.id
+        WHERE a.userId = :userId AND a.date >= date('now')
+        ORDER BY a.date ASC, a.time ASC
+        LIMIT 3
+    """)
+    fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>>
 
     // Obtener detalle de una cita específica
     @Query("""
