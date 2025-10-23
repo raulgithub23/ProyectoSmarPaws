@@ -1,5 +1,6 @@
 package com.example.smartpaws.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
@@ -25,30 +26,42 @@ class HomeViewModel(
     private val _homeState = MutableStateFlow(HomeUiState())
     val homeState: StateFlow<HomeUiState> = _homeState
 
-   // init {
-     //   loadHomeData()
-    //}
+    init {
+        loadHomeData()
+    }
 
-   /* private fun loadHomeData() {
+    private fun loadHomeData() {
         viewModelScope.launch {
             _homeState.update { it.copy(isLoading = true, errorMsg = null) }
 
             try {
-                // Combinar datos curiosos + citas
-                combine(
-                    petFactDao.getRandomFactByType("cat"),
-                    repository.getUpcomingAppointments()
-                ) { fact, appointments ->
-                    HomeUiState(
-                        currentFact = fact,
-                        upcomingAppointments = appointments,
-                        isLoading = false,
-                        errorMsg = null
-                    )
-                }.collect { newState ->
-                    _homeState.value = newState
+                // Cargar datos curiosos (gatos Y perros)
+                launch {
+                    petFactDao.getAllFacts().collect { allFacts ->
+                        Log.d("HomeViewModel", "Total de datos curiosos: ${allFacts.size}")
+                        val randomFact = allFacts.randomOrNull()
+                        Log.d("HomeViewModel", "Dato aleatorio: ${randomFact?.title} - ${randomFact?.type}")
+                        _homeState.update { it.copy(currentFact = randomFact) }
+                    }
+                }
+
+                // Cargar citas en paralelo
+                launch {
+                    repository.getUpcomingAppointments().collect { appointments ->
+                        Log.d("HomeViewModel", "Citas encontradas: ${appointments.size}")
+                        appointments.forEach {
+                            Log.d("HomeViewModel", "  - ${it.petName}: ${it.date} ${it.time}")
+                        }
+                        _homeState.update {
+                            it.copy(
+                                upcomingAppointments = appointments,
+                                isLoading = false
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
+                Log.e("HomeViewModel", "ERROR: ${e.message}", e)
                 _homeState.update {
                     it.copy(
                         isLoading = false,
@@ -59,15 +72,16 @@ class HomeViewModel(
         }
     }
 
-    */
-
     fun refreshFact() {
         viewModelScope.launch {
             try {
-                petFactDao.getRandomFactByType("cat").first()?.let { newFact ->
+                petFactDao.getAllFacts().first().let { allFacts ->
+                    val newFact = allFacts.randomOrNull()
+                    Log.d("HomeViewModel", "Refrescando dato: ${newFact?.title}")
                     _homeState.update { it.copy(currentFact = newFact) }
                 }
             } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error al refrescar: ${e.message}", e)
                 _homeState.update {
                     it.copy(errorMsg = "Error al refrescar: ${e.message}")
                 }

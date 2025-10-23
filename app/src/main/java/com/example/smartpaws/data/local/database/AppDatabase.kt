@@ -109,8 +109,6 @@ abstract class AppDatabase: RoomDatabase(){
                                 }
 
                                 //  Doctores y sus horarios
-
-
                                 val doctorsSeed = listOf(
                                     DoctorEntity(
                                         name = "Dra. María González",
@@ -157,7 +155,7 @@ abstract class AppDatabase: RoomDatabase(){
                                             userId = 1,
                                             petId = 1,
                                             doctorId = 1,
-                                            date = "2025-10-22",
+                                            date = "2025-10-25",
                                             time = "10:30",
                                             notes = "Vacunación anual"
                                         ),
@@ -176,6 +174,22 @@ abstract class AppDatabase: RoomDatabase(){
                                             date = "2025-10-28",
                                             time = "09:00",
                                             notes = "Chequeo general"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 1,
+                                            doctorId = 2,
+                                            date = "2025-11-05",
+                                            time = "14:00",
+                                            notes = "Revisión de peso"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 2,
+                                            doctorId = 1,
+                                            date = "2025-11-10",
+                                            time = "11:00",
+                                            notes = "Control post-vacunación"
                                         )
                                     )
                                     citaSeed.forEach { appointmentDao.insert(it) }
@@ -241,7 +255,10 @@ abstract class AppDatabase: RoomDatabase(){
                                     petFactsSeed.forEach { petFactDao.insertFact(it) }
                                 }
                             }
+
                         }
+
+
                     })
 
                     //destruyo todos los elementos anteriores

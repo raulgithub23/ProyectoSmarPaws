@@ -20,17 +20,17 @@ class AppointmentRepository(
         return appointmentDao.getAppointmentsByUser(userId)
     }
 
-    // NUEVO: Flow para próximas 3 citas (todas)
-    //fun getUpcomingAppointments(): Flow<List<AppointmentWithDetails>> {
-      //  return appointmentDao.getUpcomingAppointments()
-    //}
+    // Flow para próximas 3 citas (todas)
+    fun getUpcomingAppointments(): Flow<List<AppointmentWithDetails>> {
+        return appointmentDao.getUpcomingAppointments()
+    }
 
-    // NUEVO: Flow para próximas 3 citas de un usuario
-    //fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
-      //  return appointmentDao.getUpcomingAppointmentsByUser(userId)
-    //}
+    //Flow para próximas 3 citas de un usuario
+    fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
+        return appointmentDao.getUpcomingAppointmentsByUser(userId)
+    }
 
-    // Obtener detalle con Result<T> (como el profe)
+    // Obtener detalle con Result<T>
     suspend fun getAppointmentDetail(appointmentId: Long): Result<AppointmentWithDetails> {
         return try {
             val appointment = appointmentDao.getAppointmentById(appointmentId)
