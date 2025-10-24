@@ -24,6 +24,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.navigation.Route
 import com.example.smartpaws.ui.components.AppDrawer
 import com.example.smartpaws.ui.components.AppTopBar
@@ -53,7 +54,7 @@ fun AppNavGraph(
     appointmentRepository: AppointmentRepository,
     doctorRepository: DoctorRepository,
     petsViewModel: PetsViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
 ) {
 
     NavHost(
@@ -152,6 +153,7 @@ fun AppNavGraph(
                 factory = AppointmentViewModelFactory(
                     appointmentRepository = appointmentRepository,
                     doctorRepository = doctorRepository,
+                    petsViewModel = petsViewModel,
                     userId = userId
                 ),
                 key = "appointment_$userId" // Key única por usuario
@@ -162,9 +164,9 @@ fun AppNavGraph(
                 // o redirigir a la pantalla de mascotas
                 AppointmentScreen(
                     viewModel = appointmentViewModel,
-                    petId = 0L, // Valor temporal, el usuario deberá seleccionar
                     onAppointmentCreated = {
-                        navController.navigate(Route.History.path) {
+                        // PARA REDIRIGIR EN CASO QUE SE NECESITE (para home u otra)
+                        navController.navigate(Route.Appointment.path) {
                             popUpTo(Route.Home.path)
                         }
                     }

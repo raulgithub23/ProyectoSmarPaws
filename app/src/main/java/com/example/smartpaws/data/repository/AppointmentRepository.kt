@@ -69,4 +69,14 @@ class AppointmentRepository(
             Result.failure(e)
         }
     }
+
+    suspend fun deleteAppointmentById(appointmentId: Long): Result<Unit> {
+        return try {
+            appointmentDao.deleteById(appointmentId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }

@@ -72,4 +72,7 @@ interface AppointmentDao {
 
     @Insert
     suspend fun insert(appointment: AppointmentEntity): Long
+
+    @Query("DELETE FROM appointments WHERE id = :appointmentId")
+    suspend fun deleteById(appointmentId: Long)
 }

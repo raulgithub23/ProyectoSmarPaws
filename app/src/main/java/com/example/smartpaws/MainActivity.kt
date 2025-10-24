@@ -82,6 +82,8 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
 
     val appointmentRepository = AppointmentRepository(appointmentDao)
     val doctorRepository = DoctorRepository(doctorDao)
+    val petsRepository = PetsRepository(petsDao)
+
     // ^ Repositorio que encapsula la lógica de gestión de citas.
     // Expone Flows reactivos para que la UI se actualice automáticamente
     // cuando cambien los datos en la base de datos.
@@ -107,19 +109,6 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     // (el repository) en su constructor, y sin factory Android no sabría cómo crearlo.
 
     val userId: Long? = authViewModel.login.collectAsState().value.userId
-
-    val appointmentViewModel: AppointmentViewModel = viewModel(
-        factory = AppointmentViewModelFactory(
-            appointmentRepository,
-            doctorRepository,
-            userId
-        )
-    )
-
-    /*
-   * CREACION DE DEPENDENCIAS PARA PETSCREEN
-   * */
-    val petsRepository = PetsRepository(db.petsDao())
     val petsViewModel: PetsViewModel = viewModel(
         factory = PetsViewModelFactory(
             petsRepository,
@@ -127,6 +116,14 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
         )
     )
 
+    val appointmentViewModel: AppointmentViewModel = viewModel(
+        factory = AppointmentViewModelFactory(
+            appointmentRepository,
+            doctorRepository,
+            petsViewModel,
+            userId
+        )
+    )
 
     // ====== TU NAVEGACIÓN ORIGINAL ======
     val navController = rememberNavController() // Controlador de navegación (igual que antes)
@@ -144,7 +141,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
 //                appointmentViewModel = appointmentViewModel,
                 appointmentRepository = appointmentRepository,
                 doctorRepository = doctorRepository,
-                homeViewModel = homeViewModel
+                homeViewModel = homeViewModel,
             )
             // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
             // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }

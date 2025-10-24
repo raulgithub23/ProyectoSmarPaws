@@ -31,8 +31,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,10 +43,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +60,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.YearMonth
 import kotlinx.datetime.*
@@ -65,28 +73,133 @@ import kotlinx.datetime.*
 @Composable
 fun AppointmentScreen(
     viewModel: AppointmentViewModel,
-    petId: Long,
     onAppointmentCreated: () -> Unit = {}
 ) {
     val green = Color(0xFF00C853)
     val lightGreen = Color(0xFFE8F5E9)
 
     val uiState by viewModel.uiState.collectAsState()
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // Mostrar mensaje de éxito
+    var appointmentToDelete by remember { mutableStateOf<AppointmentWithDetails?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+
     LaunchedEffect(uiState.success) {
         if (uiState.success) {
-            onAppointmentCreated()
+            showSuccessDialog = true
         }
     }
 
-    // Mostrar error
+    // Diálogo de éxito
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            icon = {
+                Text("✅", fontSize = 48.sp)
+            },
+            title = {
+                Text(
+                    text = "¡Cita Agendada!",
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Tu cita ha sido agendada exitosamente para:",
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "${uiState.selectedPet?.name}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = green
+                    )
+                    Text(
+                        text = "${uiState.selectedDate?.dayOfMonth}/${uiState.selectedDate?.monthNumber}/${uiState.selectedDate?.year}",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "a las ${uiState.selectedTime}",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "con ${uiState.selectedDoctor?.doctor?.name}",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSuccessDialog = false
+                        viewModel.acknowledgeSuccess()
+                        onAppointmentCreated()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = green)
+                ) {
+                    Text("Ver mis citas")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showSuccessDialog = false
+                        viewModel.acknowledgeSuccess()
+                        viewModel.resetState()
+                    }
+                ) {
+                    Text("Agendar otra", color = green)
+                }
+            }
+        )
+    }
+
     uiState.errorMsg?.let { error ->
         LaunchedEffect(error) {
-            // Aquí podrías mostrar un Snackbar o Toast
             viewModel.clearError()
         }
     }
+
+    // Si el usuario no tiene mascotas, mostrar mensaje
+    if (uiState.hasNoPets) {
+        NoPetsWarning(primaryColor = green)
+        return
+    }
+
+    if (showDeleteDialog && appointmentToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar cita") },
+            text = { Text("¿Estás seguro que deseas eliminar esta cita? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteAppointment(appointmentToDelete!!.id)
+                        showDeleteDialog = false
+                        appointmentToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Eliminar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    appointmentToDelete = null
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 
     Column(
         modifier = Modifier
@@ -95,18 +208,76 @@ fun AppointmentScreen(
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
-        // Título
         Text(
             text = "Agendar Cita",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF1B5E20),
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // PASO 1: Selector de Doctor
+        // SECCIÓN: Mis Próximas Citas
+        if (uiState.scheduledAppointments.isNotEmpty()) {
+            Text(
+                text = "Mis Próximas Citas",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1B5E20),
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            ScheduledAppointmentsList(
+                appointments = uiState.scheduledAppointments,
+                primaryColor = green,
+                lightColor = lightGreen,
+                onDeleteClick = { appointment ->
+                    appointmentToDelete = appointment
+                    showDeleteDialog = true}
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            // Divider
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.LightGray.copy(alpha = 0.3f))
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            Text(
+                text = "Agendar Nueva Cita",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1B5E20),
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+        }
+
+        // PASO 1: Selector de Mascota
         Text(
-            text = "1. Selecciona un doctor",
+            text = "1. Selecciona la mascota",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF1B5E20),
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        PetSelector(
+            pets = uiState.userPets,
+            selectedPet = uiState.selectedPet,
+            onPetSelected = { viewModel.selectPet(it) },
+            primaryColor = green,
+            lightColor = lightGreen
+        )
+
+        Spacer(Modifier.height(32.dp))
+
+        // PASO 2: Selector de Doctor
+        Text(
+            text = "2. Selecciona un doctor",
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1B5E20),
@@ -128,32 +299,35 @@ fun AppointmentScreen(
                 selectedDoctor = uiState.selectedDoctor,
                 onDoctorSelected = { viewModel.selectDoctor(it) },
                 primaryColor = green,
-                lightColor = lightGreen
+                lightColor = lightGreen,
+                enabled = uiState.selectedPet != null
             )
         }
 
         Spacer(Modifier.height(32.dp))
 
-        // PASO 2: Selector de Fecha
+        // PASO 3: Selector de Fecha
         Text(
-            text = "2. Selecciona una fecha",
+            text = "3. Selecciona una fecha",
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1B5E20),
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        // Navegación de mes
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { viewModel.previousMonth() }) {
+            IconButton(
+                onClick = { viewModel.previousMonth() },
+                enabled = uiState.selectedPet != null && uiState.selectedDoctor != null
+            ) {
                 Icon(
                     Icons.Default.KeyboardArrowLeft,
                     contentDescription = "Mes anterior",
-                    tint = green
+                    tint = if (uiState.selectedPet != null && uiState.selectedDoctor != null) green else Color.LightGray
                 )
             }
 
@@ -164,39 +338,41 @@ fun AppointmentScreen(
                 color = Color(0xFF1B5E20)
             )
 
-            IconButton(onClick = { viewModel.nextMonth() }) {
+            IconButton(
+                onClick = { viewModel.nextMonth() },
+                enabled = uiState.selectedPet != null && uiState.selectedDoctor != null
+            ) {
                 Icon(
                     Icons.Default.KeyboardArrowRight,
                     contentDescription = "Mes siguiente",
-                    tint = green
+                    tint = if (uiState.selectedPet != null && uiState.selectedDoctor != null) green else Color.LightGray
                 )
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
-        // Calendario
         CalendarView(
             yearMonth = uiState.currentMonth,
             selectedDate = uiState.selectedDate,
             onDateSelected = { viewModel.selectDate(it) },
             primaryColor = green,
             lightColor = lightGreen,
-            enabled = uiState.selectedDoctor != null
+            enabled = uiState.selectedPet != null && uiState.selectedDoctor != null
         )
 
         Spacer(Modifier.height(32.dp))
 
-        // PASO 3: Selector de Horario
+        // PASO 4: Selector de Horario
         Text(
-            text = "3. Selecciona un horario",
+            text = "4. Selecciona un horario",
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1B5E20),
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        if (uiState.selectedDate != null && uiState.selectedDoctor != null) {
+        if (uiState.selectedDate != null && uiState.selectedDoctor != null && uiState.selectedPet != null) {
             if (uiState.availableTimes.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -248,7 +424,7 @@ fun AppointmentScreen(
                     Text("🕒", fontSize = 48.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Primero selecciona un doctor y una fecha",
+                        "Primero completa los pasos anteriores",
                         color = Color.Gray,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
@@ -261,7 +437,7 @@ fun AppointmentScreen(
 
         // Botón de agendar
         Button(
-            onClick = { viewModel.scheduleAppointment(petId) },
+            onClick = { viewModel.scheduleAppointment() },
             enabled = uiState.isReadyToSchedule,
             colors = ButtonDefaults.buttonColors(
                 containerColor = green,
@@ -280,7 +456,7 @@ fun AppointmentScreen(
             } else {
                 Text(
                     text = if (uiState.isReadyToSchedule) {
-                        "Agendar para ${uiState.selectedDate?.dayOfMonth}/${uiState.selectedDate?.monthNumber} a las ${uiState.selectedTime}"
+                        "Agendar para ${uiState.selectedPet?.name} - ${uiState.selectedDate?.dayOfMonth}/${uiState.selectedDate?.monthNumber} a las ${uiState.selectedTime}"
                     } else {
                         "Completa todos los pasos"
                     },
@@ -294,12 +470,144 @@ fun AppointmentScreen(
 }
 
 @Composable
+fun NoPetsWarning(primaryColor: Color) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("🐾", fontSize = 80.sp)
+
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            text = "No tienes mascotas registradas",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1B5E20),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = "Para agendar una cita, primero debes registrar una mascota en la sección de Mascotas",
+            fontSize = 16.sp,
+            color = Color.Gray,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun PetSelector(
+    pets: List<PetsEntity>,
+    selectedPet: PetsEntity?,
+    onPetSelected: (PetsEntity) -> Unit,
+    primaryColor: Color,
+    lightColor: Color
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp)
+    ) {
+        items(pets) { pet ->
+            PetCard(
+                pet = pet,
+                isSelected = pet.id == selectedPet?.id,
+                onClick = { onPetSelected(pet) },
+                primaryColor = primaryColor,
+                lightColor = lightColor
+            )
+        }
+    }
+}
+
+@Composable
+fun PetCard(
+    pet: PetsEntity,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    primaryColor: Color,
+    lightColor: Color
+) {
+    val borderColor = if (isSelected) primaryColor else Color.LightGray
+    val backgroundColor = if (isSelected) lightColor else Color.White
+
+    Card(
+        modifier = Modifier
+            .width(140.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        border = BorderStroke(2.dp, borderColor),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(primaryColor.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = when (pet.especie.lowercase()) {
+                        "perro" -> "🐶"
+                        "gato" -> "🐱"
+                        else -> "🐾"
+                    },
+                    fontSize = 32.sp
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = pet.name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = pet.especie,
+                fontSize = 12.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+
+            if (isSelected) {
+                Spacer(Modifier.height(4.dp))
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Seleccionado",
+                    tint = primaryColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun DoctorSelector(
     doctors: List<DoctorWithSchedules>,
     selectedDoctor: DoctorWithSchedules?,
     onDoctorSelected: (DoctorWithSchedules) -> Unit,
     primaryColor: Color,
-    lightColor: Color
+    lightColor: Color,
+    enabled: Boolean = true
 ) {
     if (doctors.isEmpty()) {
         Box(
@@ -322,9 +630,10 @@ fun DoctorSelector(
             DoctorCard(
                 doctor = doctor,
                 isSelected = doctor.doctor.id == selectedDoctor?.doctor?.id,
-                onClick = { onDoctorSelected(doctor) },
+                onClick = { if (enabled) onDoctorSelected(doctor) },
                 primaryColor = primaryColor,
-                lightColor = lightColor
+                lightColor = lightColor,
+                enabled = enabled
             )
         }
     }
@@ -336,15 +645,20 @@ fun DoctorCard(
     isSelected: Boolean,
     onClick: () -> Unit,
     primaryColor: Color,
-    lightColor: Color
+    lightColor: Color,
+    enabled: Boolean = true
 ) {
     val borderColor = if (isSelected) primaryColor else Color.LightGray
-    val backgroundColor = if (isSelected) lightColor else Color.White
+    val backgroundColor = when {
+        !enabled -> Color(0xFFF8F8F8)
+        isSelected -> lightColor
+        else -> Color.White
+    }
 
     Card(
         modifier = Modifier
             .width(160.dp)
-            .clickable { onClick() },
+            .clickable(enabled = enabled) { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         border = BorderStroke(2.dp, borderColor),
@@ -356,11 +670,10 @@ fun DoctorCard(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Ícono del doctor
             Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .background(primaryColor.copy(alpha = 0.1f), CircleShape),
+                    .background(primaryColor.copy(alpha = if (enabled) 0.1f else 0.05f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -375,7 +688,7 @@ fun DoctorCard(
                 text = doctor.doctor.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = Color.Black,
+                color = if (enabled) Color.Black else Color.Gray,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -390,7 +703,7 @@ fun DoctorCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            if (isSelected) {
+            if (isSelected && enabled) {
                 Spacer(Modifier.height(4.dp))
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
@@ -428,7 +741,6 @@ fun CalendarView(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Encabezado días de la semana
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -447,7 +759,6 @@ fun CalendarView(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Grid de días
             var dayCounter = 1
             for (week in 0..5) {
                 if (dayCounter > daysInMonth) break
@@ -585,6 +896,172 @@ fun YearMonth.monthName(): String {
         11 -> "Noviembre"
         12 -> "Diciembre"
         else -> ""
+    }
+}
+
+@Composable
+fun ScheduledAppointmentsList(
+    appointments: List<AppointmentWithDetails>,
+    primaryColor: Color,
+    lightColor: Color,
+    onDeleteClick: (AppointmentWithDetails) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        appointments.take(3).forEach { appointment ->
+            ScheduledAppointmentCard(
+                appointment = appointment,
+                primaryColor = primaryColor,
+                lightColor = lightColor,
+                onDeleteClick = { onDeleteClick(appointment)}
+            )
+        }
+    }
+}
+
+@Composable
+fun ScheduledAppointmentCard(
+    appointment: AppointmentWithDetails,
+    primaryColor: Color,
+    lightColor: Color,
+    onDeleteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = lightColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Lado izquierdo: Información de la cita
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // Nombre de la mascota
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "🐾",
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(end = 6.dp)
+                    )
+                    Text(
+                        text = appointment.petName,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Doctor
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "👨‍⚕️",
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(end = 6.dp)
+                    )
+                    Column {
+                        Text(
+                            text = appointment.doctorName,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
+                        appointment.doctorSpecialty?.let { specialty ->
+                            Text(
+                                text = specialty,
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Fecha y hora
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "📅",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = formatDate(appointment.date),
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🕒",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = appointment.time,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = primaryColor
+                        )
+                    }
+                }
+
+                // Notas (si existen)
+                appointment.notes?.let { notes ->
+                    if (notes.isNotBlank()) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = "💬 $notes",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // Lado derecho: Badge de estado
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar cita",
+                    tint = Color.Red
+                )
+            }
+        }
+    }
+}
+
+fun formatDate(dateString: String): String {
+    return try {
+        val parts = dateString.split("-")
+        if (parts.size == 3) {
+            val day = parts[2]
+            val month = parts[1]
+            val year = parts[0]
+            "$day/$month/$year"
+        } else {
+            dateString
+        }
+    } catch (e: Exception) {
+        dateString
     }
 }
 

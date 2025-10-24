@@ -176,32 +176,32 @@ fun HistoryCard(
     }
 }
 
-@Composable
-@Preview(showBackground = true)
-fun HistoryCardPreview() {
-    val fakeAppointment = AppointmentWithDetails(
-        id = 1,
-        userId = 1,
-        petId = 1,
-        doctorId = 1,
-        date = "2025-10-22",
-        time = "10:30",
-        notes = "Vacunación anual",
-        petName = "Luna",
-        doctorName = "Dra. María González"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFEAF9E7))
-            .padding(16.dp)
-    ) {
-        HistoryCard(
-            appointment = fakeAppointment,
-            cardColor = Color(0xFFC0E6BA),
-            textColor = Color(0xFF013237)
-        )
-    }
-}
+//@Composable
+//@Preview(showBackground = true)
+//fun HistoryCardPreview() {
+//    val fakeAppointment = AppointmentWithDetails(
+//        id = 1,
+//        userId = 1,
+//        petId = 1,
+//        doctorId = 1,
+//        date = "2025-10-22",
+//        time = "10:30",
+//        notes = "Vacunación anual",
+//        petName = "Luna",
+//        doctorName = "Dra. María González"
+//    )
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(Color(0xFFEAF9E7))
+//            .padding(16.dp)
+//    ) {
+//        HistoryCard(
+//            appointment = fakeAppointment,
+//            cardColor = Color(0xFFC0E6BA),
+//            textColor = Color(0xFF013237)
+//        )
+//    }
+//}
 

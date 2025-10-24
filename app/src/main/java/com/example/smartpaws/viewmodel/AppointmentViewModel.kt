@@ -4,28 +4,55 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.ui.mascota.PetsViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import kotlinx.datetime.DayOfWeek.*
 @RequiresApi(Build.VERSION_CODES.O)
 class AppointmentViewModel(
     private val repository: AppointmentRepository,
     private val doctorRepository: DoctorRepository,
-    private val userId: Long?  // Pasado desde AuthViewModel
+    private val petsViewModel: PetsViewModel,
+    private val userId: Long?
 ) : ViewModel() {
 
-    // Estados de UI
     private val _uiState = MutableStateFlow(AppointmentUiState())
     val uiState: StateFlow<AppointmentUiState> = _uiState
 
-    // Cargar doctores disponibles al iniciar
     init {
         loadDoctors()
+        observeUserPets()
+        observeUserAppointments()
+    }
+
+    private fun observeUserPets() {
+        // Observa el estado de mascotas del PetsViewModel
+        viewModelScope.launch {
+            petsViewModel.uiState.collect { petsState ->
+                _uiState.update { it.copy(userPets = petsState.petsList) }
+            }
+        }
+    }
+
+    private fun observeUserAppointments() {
+        viewModelScope.launch {
+            // Observa las citas del usuario
+            if (userId != null) {
+                repository.getUpcomingAppointmentsByUser(userId).collect { appointments ->
+                    _uiState.update {
+                        it.copy(scheduledAppointments = appointments)
+                    }
+                }
+            }
+        }
     }
 
     private fun loadDoctors() {
@@ -33,10 +60,6 @@ class AppointmentViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val doctors = doctorRepository.getAllDoctorsWithSchedules()
-                android.util.Log.d("AppointmentVM", "Doctores cargados: ${doctors.size}")
-                doctors.forEach { doctor ->
-                    android.util.Log.d("AppointmentVM", "Doctor: ${doctor.doctor.name}, Horarios: ${doctor.schedules.size}")
-                }
                 _uiState.update {
                     it.copy(
                         doctors = doctors,
@@ -44,7 +67,6 @@ class AppointmentViewModel(
                     )
                 }
             } catch (e: Exception) {
-                android.util.Log.e("AppointmentVM", "Error cargando doctores", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -55,15 +77,18 @@ class AppointmentViewModel(
         }
     }
 
+    fun selectPet(pet: PetsEntity) {
+        _uiState.update { it.copy(selectedPet = pet) }
+    }
+
     fun selectDate(date: LocalDate) {
         _uiState.update {
             it.copy(
                 selectedDate = date,
-                selectedTime = null, // Reset hora al cambiar fecha
+                selectedTime = null,
                 availableTimes = emptyList()
             )
         }
-        // Si ya hay un doctor seleccionado, cargar horarios disponibles
         _uiState.value.selectedDoctor?.let { loadAvailableTimesForDoctor(date, it) }
     }
 
@@ -79,7 +104,6 @@ class AppointmentViewModel(
                 availableTimes = emptyList()
             )
         }
-        // Si ya hay fecha seleccionada, cargar horarios
         _uiState.value.selectedDate?.let { loadAvailableTimesForDoctor(it, doctor) }
     }
 
@@ -94,7 +118,6 @@ class AppointmentViewModel(
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val currentYearMonth = today.toYearMonth()
 
-        // No permitir ir a meses anteriores al actual
         if (newMonth.year > currentYearMonth.year ||
             (newMonth.year == currentYearMonth.year && newMonth.month >= currentYearMonth.month)) {
             _uiState.update { it.copy(currentMonth = newMonth) }
@@ -128,7 +151,6 @@ class AppointmentViewModel(
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
         while (currentHour < endHour || (currentHour == endHour && currentMinute < endMinute)) {
-            // Si es hoy, filtrar horarios pasados
             if (date == today) {
                 if (currentHour > now.hour || (currentHour == now.hour && currentMinute > now.minute)) {
                     slots.add(String.format("%02d:%02d", currentHour, currentMinute))
@@ -137,7 +159,6 @@ class AppointmentViewModel(
                 slots.add(String.format("%02d:%02d", currentHour, currentMinute))
             }
 
-            // Incrementar 30 minutos
             currentMinute += 30
             if (currentMinute >= 60) {
                 currentMinute -= 60
@@ -160,8 +181,13 @@ class AppointmentViewModel(
         }
     }
 
-    fun scheduleAppointment(petId: Long, notes: String? = null) {
+    fun scheduleAppointment(notes: String? = null) {
         val state = _uiState.value
+
+        if (state.selectedPet == null) {
+            _uiState.update { it.copy(errorMsg = "Selecciona una mascota") }
+            return
+        }
 
         if (state.selectedDate == null || state.selectedTime == null || state.selectedDoctor == null) {
             _uiState.update { it.copy(errorMsg = "Completa todos los campos") }
@@ -172,8 +198,8 @@ class AppointmentViewModel(
             _uiState.update { it.copy(isSubmitting = true, errorMsg = null) }
 
             val result = repository.createAppointment(
-                userId = userId,
-                petId = petId,
+                userId = state.selectedPet.userId,
+                petId = state.selectedPet.id,
                 doctorId = state.selectedDoctor.doctor.id,
                 date = state.selectedDate.toString(),
                 time = state.selectedTime,
@@ -207,13 +233,43 @@ class AppointmentViewModel(
     }
 
     fun resetState() {
-        _uiState.update { AppointmentUiState() }
-        loadDoctors()
+        _uiState.update {
+            AppointmentUiState(
+                userPets = it.userPets,
+                doctors = it.doctors
+            )
+        }
     }
+
+    fun acknowledgeSuccess() {
+        _uiState.update { it.copy(success = false) }
+    }
+
+    fun deleteAppointment(appointmentId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.deleteAppointmentById(appointmentId)
+                _uiState.update {
+                    it.copy(
+                        scheduledAppointments = it.scheduledAppointments.filterNot { a ->
+                            a.id == appointmentId
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(errorMsg = "Error al eliminar cita: ${e.message}")
+                }
+            }
+        }
+    }
+
 }
 
-// Estado de UI consolidado
 data class AppointmentUiState(
+    val scheduledAppointments : List<AppointmentWithDetails> = emptyList(),
+    val userPets: List<PetsEntity> = emptyList(),
+    val selectedPet: PetsEntity? = null,
     val selectedDate: LocalDate? = null,
     val selectedTime: String? = null,
     val selectedDoctor: DoctorWithSchedules? = null,
@@ -225,15 +281,19 @@ data class AppointmentUiState(
     val isSubmitting: Boolean = false,
     val success: Boolean = false,
     val errorMsg: String? = null,
-    val createdAppointmentId: Long? = null,
-    val canSubmit: Boolean = false
+    val createdAppointmentId: Long? = null
 ) {
-    // Computed property
     val isReadyToSchedule: Boolean
-        get() = selectedDate != null && selectedTime != null && selectedDoctor != null && !isSubmitting
+        get() = selectedPet != null &&
+                selectedDate != null &&
+                selectedTime != null &&
+                selectedDoctor != null &&
+                !isSubmitting
+
+    val hasNoPets: Boolean
+        get() = userPets.isEmpty()
 }
 
-// Extension para YearMonth
 fun LocalDate.toYearMonth(): YearMonth = YearMonth(year, monthNumber)
 
 data class YearMonth(val year: Int, val month: Int) {

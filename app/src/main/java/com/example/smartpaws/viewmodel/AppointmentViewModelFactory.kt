@@ -6,10 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.data.repository.PetsRepository
+import com.example.smartpaws.ui.mascota.PetsViewModel
 
 class AppointmentViewModelFactory(
     private val appointmentRepository: AppointmentRepository,
     private val doctorRepository: DoctorRepository,
+    private val petsViewModel: PetsViewModel,
     private val userId: Long?
 ) : ViewModelProvider.Factory {
 
@@ -20,6 +23,7 @@ class AppointmentViewModelFactory(
             return AppointmentViewModel(
                 repository = appointmentRepository,
                 doctorRepository = doctorRepository,
+                petsViewModel =  petsViewModel,
                 userId = userId
             ) as T
         }
