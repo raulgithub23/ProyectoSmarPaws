@@ -74,4 +74,7 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
     //Fechas para el calendario
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+
+    //cargar imagenes con compose
+    implementation("io.coil-kt:coil-compose:2.7.0")
 }
