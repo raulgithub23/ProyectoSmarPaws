@@ -2,6 +2,7 @@ package com.example.smartpaws.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartpaws.data.local.user.UserEntity
 import com.example.smartpaws.data.repository.UserRepository
 import com.example.smartpaws.domain.validation.validateConfirm
 import com.example.smartpaws.domain.validation.validateEmail
@@ -62,6 +63,9 @@ class AuthViewModel(
     val login: StateFlow<LoginUiState> = _login             // Exposición inmutable
 
     private val _register = MutableStateFlow(RegisterUiState()) // Estado interno (Registro)
+
+    private val _userProfile = MutableStateFlow<UserEntity?>(null)
+    val userProfile: StateFlow<UserEntity?> = _userProfile
     val register: StateFlow<RegisterUiState> = _register        // Exposición inmutable
 
     // ----------------- LOGIN: handlers y envío -----------------
@@ -84,19 +88,20 @@ class AuthViewModel(
         _login.update { it.copy(canSubmit = can) }          // Actualizamos el flag
     }
 
-    fun submitLogin() {                                     // Acción de login (simulación async)
-        val s = _login.value                                // Snapshot del estado
-        if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
-        viewModelScope.launch {                             // Lanzamos corrutina
-            _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Seteamos loading
-            delay(500)                                      // Simulamos tiempo de verificación
+    fun submitLogin() {
+        val s = _login.value
+        if (!s.canSubmit || s.isSubmitting) return
+        viewModelScope.launch {
+            _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
+            delay(500)
 
             val result = repository.login(s.email.trim(), s.pass)
 
-            // Interpreta el resultado y actualiza estado
             _login.update {
                 if (result.isSuccess) {
                     val user = result.getOrNull()
+                    user?.id?.let { userId -> loadUserProfile(userId) }
+
                     it.copy(
                         isSubmitting = false,
                         success = true,
@@ -110,6 +115,32 @@ class AuthViewModel(
                         errorMsg = result.exceptionOrNull()?.message ?: "Error de autenticación"
                     )
                 }
+            }
+        }
+    }
+
+    private fun loadUserProfile(userId: Long) {
+        viewModelScope.launch {
+            try {
+                val user = repository.getUserById(userId)
+                _userProfile.value = user
+            } catch (e: Exception) {
+                _userProfile.value = null
+            }
+        }
+    }
+
+    fun updateProfileImage(imagePath: String) {
+        viewModelScope.launch {
+            try {
+                val currentUser = _userProfile.value
+                if (currentUser != null) {
+                    val updatedUser = currentUser.copy(profileImagePath = imagePath)
+                    repository.updateUser(updatedUser)
+                    _userProfile.value = updatedUser
+                }
+            } catch (e: Exception) {
+                // Manejar error
             }
         }
     }

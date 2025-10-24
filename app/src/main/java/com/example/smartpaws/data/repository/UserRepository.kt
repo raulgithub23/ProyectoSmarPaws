@@ -35,4 +35,11 @@ class UserRepository(
             return Result.success(id)
         }
     }
+    suspend fun getUserById(userId: Long): UserEntity? {
+        return userDao.getUserById(userId)
+    }
+
+    suspend fun updateUser(user: UserEntity) {
+        userDao.update(user)
+    }
 }

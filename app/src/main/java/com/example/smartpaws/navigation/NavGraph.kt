@@ -176,7 +176,7 @@ fun AppNavGraph(
 
         composable(Route.User.path) {
             MainScaffoldWrapper(navController) {
-                UserScreen()
+                UserScreen(authViewModel = authViewModel)
             }
         }
     }

@@ -9,8 +9,10 @@ data class UserEntity(
     val id: Long = 0L,
     val name: String,              // Obligatorio
     val email: String,             // Obligatorio
-    val phone: String,    // Opcional
-    val password: String           // Obligatorio
+    val phone: String,    // Obligatorio
+    val password: String,         // Obligatorio
+    val profileImagePath: String? = null //Ruta de la foto de perfil
+
 )
 
 
