@@ -1,6 +1,7 @@
 package com.example.smartpaws
 
 import AppNavGraph
+import HistoryViewModel
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -25,7 +26,6 @@ import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.AuthViewModelFactory
-import com.example.smartpaws.viewmodel.HistoryViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import androidx.compose.runtime.collectAsState
 import com.example.smartpaws.viewmodel.AdminViewModel
@@ -84,6 +84,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     val doctorRepository = DoctorRepository(doctorDao)
     val petsRepository = PetsRepository(petsDao)
 
+
     // ^ Repositorio que encapsula la lógica de gestión de citas.
     // Expone Flows reactivos para que la UI se actualice automáticamente
     // cuando cambien los datos en la base de datos.
@@ -93,14 +94,19 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
         factory = AuthViewModelFactory(userRepository)
     )
 
-    val historyViewModel: HistoryViewModel = viewModel(
-        factory = HistoryViewModelFactory(appointmentRepository)
+    val userId: Long? = authViewModel.login.collectAsState().value.userId
+
+
+    val historyViewModelFactory = HistoryViewModelFactory(
+        repository = appointmentRepository,
+        authViewModel = authViewModel
     )
 
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(
             repository = appointmentRepository,
-            petFactDao = petFactDao
+            petFactDao = petFactDao,
+            authViewModel = authViewModel
         )
     )
     // ^ Creamos los ViewModels con factory para inyectar los repositorios.
@@ -108,7 +114,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     // La factory es necesaria porque el ViewModel necesita recibir parámetros
     // (el repository) en su constructor, y sin factory Android no sabría cómo crearlo.
 
-    val userId: Long? = authViewModel.login.collectAsState().value.userId
+
     val petsViewModel: PetsViewModel = viewModel(
         factory = PetsViewModelFactory(
             petsRepository,
@@ -140,7 +146,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
             AppNavGraph(
                 navController = navController,
                 authViewModel = authViewModel, // VM para Login/Register
-                historyViewModel = historyViewModel, // VM para Historial de citas
+                historyViewModelFactory = historyViewModelFactory, // VM para Historial de citas
                 petsViewModel = petsViewModel,
 //                appointmentViewModel = appointmentViewModel,
                 appointmentRepository = appointmentRepository,
