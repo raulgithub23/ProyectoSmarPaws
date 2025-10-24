@@ -1,6 +1,4 @@
 import android.os.Build
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,17 +12,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.navArgument
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
-import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.navigation.Route
 import com.example.smartpaws.ui.components.AppDrawer
 import com.example.smartpaws.ui.components.AppTopBar
@@ -32,12 +26,14 @@ import com.example.smartpaws.ui.components.BottomNavigationBar
 import com.example.smartpaws.ui.components.defaultDrawerItems
 import com.example.smartpaws.ui.mascota.PetsScreen
 import com.example.smartpaws.ui.mascota.PetsViewModel
+import com.example.smartpaws.ui.screen.AdminPanelScreen
 import com.example.smartpaws.ui.screen.screenprocesspayment.AppointmentScreen
 import com.example.smartpaws.ui.screen.HistoryScreen
 import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
+import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
@@ -55,6 +51,7 @@ fun AppNavGraph(
     doctorRepository: DoctorRepository,
     petsViewModel: PetsViewModel,
     homeViewModel: HomeViewModel,
+    adminViewModel: AdminViewModel,
 ) {
 
     NavHost(
@@ -95,13 +92,13 @@ fun AppNavGraph(
         // ========== PANTALLAS PRINCIPALES (con Scaffold completo) ==========
         // Envolvemos todas las pantallas autenticadas en un Scaffold compartido
         composable(Route.Home.path) {
-            MainScaffoldWrapper(navController) {
+            MainScaffoldWrapper(navController, authViewModel) {
                 HomeScreen(viewModel = homeViewModel)
             }
         }
 
         composable(Route.Pets.path) {
-            MainScaffoldWrapper(navController) {
+            MainScaffoldWrapper(navController, authViewModel) {
                 PetsScreen(
                     petsViewModel = petsViewModel,
                     authViewModel = authViewModel
@@ -110,7 +107,7 @@ fun AppNavGraph(
         }
 
         composable(Route.History.path) {
-            MainScaffoldWrapper(navController) {
+            MainScaffoldWrapper(navController, authViewModel) {
                 HistoryScreen(viewModel = historyViewModel)
             }
         }
@@ -159,7 +156,7 @@ fun AppNavGraph(
                 key = "appointment_$userId" // Key única por usuario
             )
 
-            MainScaffoldWrapper(navController) {
+            MainScaffoldWrapper(navController, authViewModel) {
                 // Aquí podrías mostrar primero un selector de mascotas
                 // o redirigir a la pantalla de mascotas
                 AppointmentScreen(
@@ -175,8 +172,16 @@ fun AppNavGraph(
         }
 
         composable(Route.User.path) {
-            MainScaffoldWrapper(navController) {
+            MainScaffoldWrapper(navController, authViewModel) {
                 UserScreen(authViewModel = authViewModel)
+            }
+        }
+
+        composable(Route.AdminPanel.path) {
+            MainScaffoldWrapper(navController, authViewModel) {
+                // Aquí iría tu pantalla de UI para el admin
+                // Asumimos que tienes un composable llamado AdminPanelScreen
+                AdminPanelScreen(viewModel = adminViewModel)
             }
         }
     }
@@ -185,6 +190,7 @@ fun AppNavGraph(
 @Composable
 private fun MainScaffoldWrapper(
     navController: NavHostController,
+    authViewModel: AuthViewModel,
     content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -225,11 +231,21 @@ private fun MainScaffoldWrapper(
         }
     }
 
+    val goAdminPanel: () -> Unit = {
+        navController.navigate(Route.AdminPanel.path) {
+            popUpTo(Route.Home.path)
+        }
+    }
+
+    val userProfile by authViewModel.userProfile.collectAsState()
+    val isAdmin = userProfile?.rol == "ADMIN"
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             AppDrawer(
                 currentRoute = currentRoute,
+                // --- MODIFICADO: Pasar nuevos parámetros ---
                 items = defaultDrawerItems(
                     onHome = {
                         scope.launch { drawerState.close() }
@@ -238,6 +254,12 @@ private fun MainScaffoldWrapper(
                     onUser = {
                         scope.launch { drawerState.close() }
                         goUser()
+                    },
+                    // --- NUEVOS PARÁMETROS ---
+                    isAdmin = isAdmin,
+                    onAdminPanel = {
+                        scope.launch { drawerState.close() }
+                        goAdminPanel()
                     }
                 )
             )

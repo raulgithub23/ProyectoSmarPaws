@@ -3,6 +3,7 @@ package com.example.smartpaws.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -53,11 +54,34 @@ fun defaultDrawerItems(
     onHome: () -> Unit,   // Acción Home
 //    onLogin: () -> Unit,  // Acción Login
 //    onRegister: () -> Unit, // Acción Registro
-    onUser: () -> Unit //ACCION DEL PERFIL
+    onUser: () -> Unit, //ACCION DEL PERFIL
+    isAdmin: Boolean,
+    onAdminPanel: () -> Unit
 
-): List<DrawerItem> = listOf(
-    DrawerItem("Home", Icons.Filled.Home, onHome),          // Ítem Home
-//    DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),       // Ítem Login
-//    DrawerItem("Registro", Icons.Filled.Person, onRegister), // Ítem Registro
-    DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
-)
+): List<DrawerItem> {
+    // Usamos una lista mutable para construirla dinámicamente
+    val items = mutableListOf(
+        DrawerItem("Home", Icons.Filled.Home, onHome),
+        DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
+    )
+
+    // --- LÓGICA CONDICIONAL ---
+    if (isAdmin) {
+        items.add(
+            DrawerItem(
+                "Panel Admin",
+                Icons.Filled.AdminPanelSettings, // Ícono de admin
+                onAdminPanel
+            )
+        )
+    }
+
+    return items.toList() // Devolvemos la lista inmutable
+}
+
+//= listOf(
+//DrawerItem("Home", Icons.Filled.Home, onHome),          // Ítem Home
+////    DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),       // Ítem Login
+////    DrawerItem("Registro", Icons.Filled.Person, onRegister), // Ítem Registro
+//DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
+//)

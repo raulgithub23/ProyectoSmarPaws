@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
         AppointmentEntity::class,
         PetFactEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
@@ -73,12 +73,14 @@ abstract class AppDatabase: RoomDatabase(){
                                 //creamos las semillas de los insert de usuarios
                                 val userSeed = listOf(
                                     UserEntity(
+                                        rol = "ADMIN",
                                         name = "Admin",
                                         email = "a@a.cl",
                                         phone = "12345678",
                                         password = "Admin123!"
                                     ),
                                     UserEntity(
+                                        rol = "USER",
                                         name = "Jose",
                                         email = "b@b.cl",
                                         phone = "12345678",

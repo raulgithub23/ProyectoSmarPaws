@@ -14,8 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.smartpaws.data.local.database.AppDatabase
-import com.example.smartpaws.data.local.doctors.DoctorDao
-import com.example.smartpaws.data.local.pets.PetFactDao
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository
@@ -30,6 +28,8 @@ import com.example.smartpaws.viewmodel.AuthViewModelFactory
 import com.example.smartpaws.viewmodel.HistoryViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import androidx.compose.runtime.collectAsState
+import com.example.smartpaws.viewmodel.AdminViewModel
+import com.example.smartpaws.viewmodel.AdminViewModelFactory
 import com.example.smartpaws.viewmodel.HomeViewModel
 import com.example.smartpaws.viewmodel.HomeViewModelFactory
 
@@ -125,6 +125,10 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
         )
     )
 
+    val adminViewModel: AdminViewModel = viewModel(
+        factory = AdminViewModelFactory(userRepository)
+    )
+
     // ====== TU NAVEGACIÓN ORIGINAL ======
     val navController = rememberNavController() // Controlador de navegación (igual que antes)
     SMARTPAWSTheme(dynamicColor = false) { // Provee colores/tipografías Material 3 (igual que antes)
@@ -142,6 +146,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
                 appointmentRepository = appointmentRepository,
                 doctorRepository = doctorRepository,
                 homeViewModel = homeViewModel,
+                adminViewModel = adminViewModel
             )
             // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
             // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }
