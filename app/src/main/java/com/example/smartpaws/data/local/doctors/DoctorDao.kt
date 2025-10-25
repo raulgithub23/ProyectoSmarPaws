@@ -45,4 +45,17 @@ interface DoctorDao {
     // SE PODRÁ ELIMINAR EL DOCTOR
     @Delete
     suspend fun delete(doctor: DoctorEntity)
+
+    // Borra todos los horarios de un doctor específico
+    @Query("DELETE FROM doctor_schedules WHERE doctorId = :doctorId")
+    suspend fun deleteSchedulesForDoctor(doctorId: Long)
+
+    // Transacción para actualizar horarios: borra los viejos e inserta los nuevos
+    @Transaction
+    suspend fun updateSchedules(doctorId: Long, newSchedules: List<DoctorScheduleEntity>) {
+        deleteSchedulesForDoctor(doctorId)
+        // Aseguramos que los nuevos horarios tengan el ID de doctor correcto y ID de entidad 0
+        val schedulesWithId = newSchedules.map { it.copy(id = 0L, doctorId = doctorId) }
+        insertSchedules(schedulesWithId)
+    }
 }

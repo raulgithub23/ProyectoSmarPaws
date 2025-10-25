@@ -126,7 +126,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     )
 
     val adminViewModel: AdminViewModel = viewModel(
-        factory = AdminViewModelFactory(userRepository)
+        factory = AdminViewModelFactory(userRepository, doctorRepository)
     )
 
     // ====== TU NAVEGACIÓN ORIGINAL ======

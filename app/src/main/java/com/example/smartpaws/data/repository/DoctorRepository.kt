@@ -71,4 +71,24 @@ class DoctorRepository(
             false
         }
     }
+
+    // Actualizar los horarios de un doctor
+    suspend fun updateSchedules(doctorId: Long, newSchedules: List<DoctorScheduleEntity>): Result<Unit> {
+        return try {
+            doctorDao.updateSchedules(doctorId, newSchedules)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // Eliminar el perfil de un doctor
+    suspend fun deleteDoctor(doctor: DoctorEntity): Result<Unit> {
+        return try {
+            doctorDao.delete(doctor)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

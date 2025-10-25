@@ -26,13 +26,13 @@ import com.example.smartpaws.ui.components.BottomNavigationBar
 import com.example.smartpaws.ui.components.defaultDrawerItems
 import com.example.smartpaws.ui.mascota.PetsScreen
 import com.example.smartpaws.ui.mascota.PetsViewModel
-import com.example.smartpaws.ui.screen.AdminPanelScreen
 import com.example.smartpaws.ui.screen.screenprocesspayment.AppointmentScreen
 import com.example.smartpaws.ui.screen.HistoryScreen
 import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
+import com.example.smartpaws.view.AdminPanelScreen
 import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
@@ -141,11 +141,9 @@ fun AppNavGraph(
         // ========== RUTA ALTERNATIVA: Appointment sin petId específico ==========
         // Si el usuario va directamente desde el bottom bar sin seleccionar mascota
         composable(Route.Appointment.path) {
-            // Obtener userId del authViewModel
             val loginState by authViewModel.login.collectAsState()
             val userId = loginState.userId ?: 1L // Usar 1L por defecto para testing
 
-            // Crear el ViewModel AQUÍ con el userId correcto
             val appointmentViewModel: AppointmentViewModel = viewModel(
                 factory = AppointmentViewModelFactory(
                     appointmentRepository = appointmentRepository,
@@ -153,7 +151,7 @@ fun AppNavGraph(
                     petsViewModel = petsViewModel,
                     userId = userId
                 ),
-                key = "appointment_$userId" // Key única por usuario
+                key = "appointment_$userId"
             )
 
             MainScaffoldWrapper(navController, authViewModel) {
