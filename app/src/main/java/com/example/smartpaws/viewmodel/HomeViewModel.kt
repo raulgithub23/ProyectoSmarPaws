@@ -20,7 +20,9 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val repository: AppointmentRepository,
-    private val petFactDao: PetFactDao
+    private val petFactDao: PetFactDao,
+    private val authViewModel: AuthViewModel // se recibe el authViewModel opara sacar la id del ususraio
+
 ) : ViewModel() {
 
     private val _homeState = MutableStateFlow(HomeUiState())
@@ -35,33 +37,38 @@ class HomeViewModel(
             _homeState.update { it.copy(isLoading = true, errorMsg = null) }
 
             try {
-                // Cargar datos curiosos (gatos Y perros)
+                // Cargar datos curiosos
                 launch {
                     petFactDao.getAllFacts().collect { allFacts ->
-                        Log.d("HomeViewModel", "Total de datos curiosos: ${allFacts.size}")
                         val randomFact = allFacts.randomOrNull()
-                        Log.d("HomeViewModel", "Dato aleatorio: ${randomFact?.title} - ${randomFact?.type}")
                         _homeState.update { it.copy(currentFact = randomFact) }
                     }
                 }
 
-                // Cargar citas en paralelo
+                // Cargar citas OBSERVANDO el userId
                 launch {
-                    repository.getUpcomingAppointments().collect { appointments ->
-                        Log.d("HomeViewModel", "Citas encontradas: ${appointments.size}")
-                        appointments.forEach {
-                            Log.d("HomeViewModel", "  - ${it.petName}: ${it.date} ${it.time}")
-                        }
-                        _homeState.update {
-                            it.copy(
-                                upcomingAppointments = appointments,
-                                isLoading = false
-                            )
+                    authViewModel.login.collect { loginState ->
+                        if (loginState.userId != null) {
+                            repository.getUpcomingAppointmentsByUser(loginState.userId).collect { appointments ->
+                                _homeState.update {
+                                    it.copy(
+                                        upcomingAppointments = appointments,
+                                        isLoading = false
+                                    )
+                                }
+                            }
+                        } else {
+                            _homeState.update {
+                                it.copy(
+                                    upcomingAppointments = emptyList(),
+                                    isLoading = false,
+                                    errorMsg = null // Quitamos el error cuando no hay usuario
+                                )
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "ERROR: ${e.message}", e)
                 _homeState.update {
                     it.copy(
                         isLoading = false,

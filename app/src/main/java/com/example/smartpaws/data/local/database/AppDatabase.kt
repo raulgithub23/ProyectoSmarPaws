@@ -47,7 +47,7 @@ abstract class AppDatabase: RoomDatabase(){
         @Volatile
         private var INSTANCE: AppDatabase? = null
         //variable para el nombre
-        private const val DB_NAME = "ui_navegacion.db"
+        private const val DB_NAME = "smarpaws_v10.db"
 
         //obtener la instancia unica de BD
         fun getInstance(context: Context): AppDatabase {
@@ -247,8 +247,53 @@ abstract class AppDatabase: RoomDatabase(){
                                             date = "2025-11-10",
                                             time = "11:00",
                                             notes = "Control post-vacunación"
+                                        ),
+
+                                        // ========== CITAS PASADAS para el admin todo esto es prueba ==========
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 1, // Firulais
+                                            doctorId = 1, // Dr. Carlos Méndez
+                                            date = "2025-10-10",
+                                            time = "10:30",
+                                            notes = "Vacunación anual completa"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 1,
+                                            petId = 2, // Michi
+                                            doctorId = 4, // Dra. Ana Rojas (Dermatología)
+                                            date = "2025-10-15",
+                                            time = "09:00",
+                                            notes = "Revisión de piel por alergia estacional"
+                                        ),
+
+                                        // ========== CITAS PASADAS PARA JOSe todo esto es prueba ==========
+                                        AppointmentEntity(
+                                            userId = 2,
+                                            petId = 3, // Rex
+                                            doctorId = 2, // Dra. María González (Cirugía)
+                                            date = "2025-09-28",
+                                            time = "11:00",
+                                            notes = "Control post-operatorio de cadera"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 2,
+                                            petId = 3, // Rex
+                                            doctorId = 1, // Dr. Carlos Méndez
+                                            date = "2025-10-05",
+                                            time = "14:00",
+                                            notes = "Chequeo general y desparasitación"
+                                        ),
+                                        AppointmentEntity(
+                                            userId = 2,
+                                            petId = 3, // Rex
+                                            doctorId = 5, // Dr. Luis Pérez (Odontología)
+                                            date = "2025-10-18",
+                                            time = "16:30",
+                                            notes = "Limpieza dental profunda"
                                         )
                                     )
+
                                     //insertar las citas de ejemplo
                                     citaSeed.forEach { appointmentDao.insert(it) }
                                 }

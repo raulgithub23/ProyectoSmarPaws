@@ -37,7 +37,7 @@ import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
-import com.example.smartpaws.viewmodel.HistoryViewModel
+import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import com.example.smartpaws.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
@@ -46,12 +46,12 @@ import kotlinx.coroutines.launch
 fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    historyViewModel: HistoryViewModel,
     appointmentRepository: AppointmentRepository,
     doctorRepository: DoctorRepository,
     petsViewModel: PetsViewModel,
     homeViewModel: HomeViewModel,
     adminViewModel: AdminViewModel,
+    historyViewModelFactory: HistoryViewModelFactory
 ) {
 
     NavHost(
@@ -107,6 +107,9 @@ fun AppNavGraph(
         }
 
         composable(Route.History.path) {
+            val historyViewModel: HistoryViewModel = viewModel(
+                factory = historyViewModelFactory
+            )
             MainScaffoldWrapper(navController, authViewModel) {
                 HistoryScreen(viewModel = historyViewModel)
             }
