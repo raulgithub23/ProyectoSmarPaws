@@ -1,19 +1,19 @@
-package com.example.smartpaws.viewmodel
+package com.example.smartpaws.viewmodel // O tu paquete de ViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
-import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
 import com.example.smartpaws.data.local.user.UserEntity
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.UserRepository
+import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Estados UI
 data class AdminUiState(
     // Pestaña de Usuarios
     val users: List<UserEntity> = emptyList(),
@@ -49,20 +49,22 @@ class AdminViewModel(
     }
 
     fun loadAllData() {
-        loadUsers()
-        loadDoctors()
-    }
-
-    // Cargar todos los usuarios
-    fun loadUsers() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
             try {
-                val users = userRepository.getAllUsers()
-                val stats = calculateStats(users)
+                // Cargar ambas listas en paralelo
+                val usersAsync = async { userRepository.getAllUsers() }
+                val doctorsAsync = async { doctorRepository.getAllDoctorsWithSchedules() }
+
+                val users = usersAsync.await()
+                val doctors = doctorsAsync.await()
+
+                val stats = calculateStats(users, doctors.size)
+
                 _uiState.update {
                     it.copy(
                         users = users,
+                        doctors = doctors,
                         stats = stats,
                         isLoading = false
                     )
@@ -71,29 +73,7 @@ class AdminViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMsg = "Error al cargar usuarios: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    fun loadDoctors() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
-            try {
-                val doctors = doctorRepository.getAllDoctorsWithSchedules()
-                _uiState.update {
-                    it.copy(
-                        doctors = doctors,
-                        isLoading = false
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMsg = "Error al cargar doctores: ${e.message}"
+                        errorMsg = "Error al cargar datos: ${e.message}"
                     )
                 }
             }
@@ -104,7 +84,6 @@ class AdminViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null, successMsg = null) }
 
-            // 1. Registrar el UserEntity (login)
             val registerResult = userRepository.register(name, email, phone, pass)
 
             if (registerResult.isFailure) {
@@ -123,7 +102,6 @@ class AdminViewModel(
                 return@launch
             }
 
-            // 2. Actualizar rol a "DOCTOR"
             val updateResult = userRepository.updateUserRole(newUserId, "DOCTOR")
             if (updateResult.isFailure) {
                 _uiState.update {
@@ -132,17 +110,16 @@ class AdminViewModel(
                         errorMsg = updateResult.exceptionOrNull()?.message ?: "Error al asignar rol de Doctor"
                     )
                 }
-                loadUsers() // Recargar usuarios para mostrar el estado (fallido)
+                loadAllData()
                 return@launch
             }
 
-            // 3. Crear el DoctorEntity (perfil)
             val doctorProfileResult = doctorRepository.createDoctorWithSchedules(
                 name = name,
                 specialty = specialty,
                 email = email,
                 phone = phone,
-                schedules = emptyList() // Se crea con horario vacío
+                schedules = emptyList()
             )
 
             if (doctorProfileResult.isSuccess) {
@@ -152,7 +129,6 @@ class AdminViewModel(
                         successMsg = "Doctor (Usuario y Perfil) creado correctamente"
                     )
                 }
-                loadAllData() // Recargar ambas listas
             } else {
                 _uiState.update {
                     it.copy(
@@ -160,13 +136,11 @@ class AdminViewModel(
                         errorMsg = doctorProfileResult.exceptionOrNull()?.message ?: "Usuario creado, pero falló al crear perfil de doctor"
                     )
                 }
-                loadUsers() // Recargar usuarios de todos modos
             }
+            loadAllData()
         }
     }
 
-    // --- NUEVA FUNCIÓN ---
-    // Actualizar los horarios de un doctor
     fun updateDoctorSchedules(doctorId: Long, newSchedules: List<DoctorScheduleEntity>) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null, successMsg = null) }
@@ -179,7 +153,7 @@ class AdminViewModel(
                         successMsg = "Horario actualizado correctamente"
                     )
                 }
-                loadDoctors() // Recargar lista de doctores
+                loadAllData()
             } else {
                 _uiState.update {
                     it.copy(
@@ -191,8 +165,6 @@ class AdminViewModel(
         }
     }
 
-    // --- NUEVA FUNCIÓN ---
-    // Eliminar solo el perfil del doctor (no el usuario de login)
     fun deleteDoctorProfile(doctor: DoctorEntity) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
@@ -205,7 +177,7 @@ class AdminViewModel(
                         successMsg = "Perfil de doctor eliminado"
                     )
                 }
-                loadDoctors()
+                loadAllData()
             } else {
                 _uiState.update {
                     it.copy(
@@ -217,11 +189,10 @@ class AdminViewModel(
         }
     }
 
-    // Buscar usuarios
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
         if (query.isBlank()) {
-            loadUsers()
+            loadAllData()
         } else {
             viewModelScope.launch {
                 try {
@@ -234,7 +205,6 @@ class AdminViewModel(
         }
     }
 
-    // Filtrar por rol
     fun filterByRole(role: String?) {
         _uiState.update { it.copy(selectedRole = role) }
         viewModelScope.launch {
@@ -251,7 +221,6 @@ class AdminViewModel(
         }
     }
 
-    // Cambiar rol de usuario
     fun updateUserRole(userId: Long, newRole: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null, successMsg = null) }
@@ -264,7 +233,7 @@ class AdminViewModel(
                         successMsg = "Rol actualizado correctamente"
                     )
                 }
-                loadUsers() // Recargar lista
+                loadAllData()
             } else {
                 _uiState.update {
                     it.copy(
@@ -276,7 +245,6 @@ class AdminViewModel(
         }
     }
 
-    // Eliminar usuario
     fun deleteUser(userId: Long) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
@@ -289,7 +257,7 @@ class AdminViewModel(
                         successMsg = "Usuario eliminado"
                     )
                 }
-                loadUsers()
+                loadAllData()
             } else {
                 _uiState.update {
                     it.copy(
@@ -301,17 +269,16 @@ class AdminViewModel(
         }
     }
 
-    // Calcular estadísticas
-    private fun calculateStats(users: List<UserEntity>): AdminStats {
+    private fun calculateStats(users: List<UserEntity>, doctorProfileCount: Int): AdminStats {
         return AdminStats(
             totalUsers = users.size,
             adminCount = users.count { it.rol == "ADMIN" },
-            doctorCount = users.count { it.rol == "DOCTOR" },
+            doctorCount = doctorProfileCount,
             userCount = users.count { it.rol == "USER" }
         )
     }
 
-    // Limpiar mensajes
+    // --- Limpiar mensajes
     fun clearMessages() {
         _uiState.update { it.copy(errorMsg = null, successMsg = null) }
     }

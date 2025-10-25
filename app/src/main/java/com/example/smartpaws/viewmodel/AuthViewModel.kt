@@ -2,6 +2,7 @@ package com.example.smartpaws.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartpaws.data.local.storage.UserPreferences
 import com.example.smartpaws.data.local.user.UserEntity
 import com.example.smartpaws.data.repository.UserRepository
 import com.example.smartpaws.domain.validation.validateConfirm
@@ -12,6 +13,7 @@ import com.example.smartpaws.domain.validation.validateStrongPassword
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -52,11 +54,12 @@ data class RegisterUiState(                                // Estado de la panta
 
 class AuthViewModel(
     // NUEVO: 4.- inyectamos el repositorio real que usa Room/SQLite
-    private val repository: UserRepository
+    private val repository: UserRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {                         // ViewModel que maneja Login/Registro
 
-    // 3.- Eliminamos Colección **estática** en memoria compartida entre instancias del VM (sin storage persistente)
-
+    private val _isLoadingSession = MutableStateFlow(true)
+    val isLoadingSession: StateFlow<Boolean> = _isLoadingSession
 
     // Flujos de estado para observar desde la UI
     private val _login = MutableStateFlow(LoginUiState())   // Estado interno (Login)
@@ -67,6 +70,28 @@ class AuthViewModel(
     private val _userProfile = MutableStateFlow<UserEntity?>(null)
     val userProfile: StateFlow<UserEntity?> = _userProfile
     val register: StateFlow<RegisterUiState> = _register        // Exposición inmutable
+
+    init {
+        checkActiveSession()
+    }
+
+    private fun checkActiveSession() {
+        viewModelScope.launch {
+            //lee el primer valor del Flow (o null) y se detiene
+            val userId = userPreferences.loggedInUserId.firstOrNull()
+
+            if (userId != null) {
+                // Cargamos su perfil
+                try {
+                    loadUserProfile(userId)
+                    _login.update { it.copy(success = true, userId = userId) }
+                } catch (e: Exception) {
+                    userPreferences.clearSession()
+                }
+            }
+            _isLoadingSession.value = false
+        }
+    }
 
     // ----------------- LOGIN: handlers y envío -----------------
 
@@ -100,7 +125,13 @@ class AuthViewModel(
             _login.update {
                 if (result.isSuccess) {
                     val user = result.getOrNull()
-                    user?.id?.let { userId -> loadUserProfile(userId) }
+                    if (user != null) {
+                        // corrutina para no bloquear
+                        viewModelScope.launch {
+                            userPreferences.saveUserId(user.id)
+                        }
+                        user.id.let { userId -> loadUserProfile(userId) }
+                    }
 
                     it.copy(
                         isSubmitting = false,
@@ -149,6 +180,10 @@ class AuthViewModel(
     }
 
     fun logout() {
+        viewModelScope.launch {
+            userPreferences.clearSession()
+        }
+
         _login.value = LoginUiState(
             success = false,
             userId = null,
@@ -156,6 +191,8 @@ class AuthViewModel(
             pass = "",
             canSubmit = false
         )
+        // limpiar el perfil de usuario
+        _userProfile.value = null
     }
 
 

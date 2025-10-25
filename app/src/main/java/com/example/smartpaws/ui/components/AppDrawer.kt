@@ -1,9 +1,11 @@
 package com.example.smartpaws.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -56,8 +58,8 @@ fun defaultDrawerItems(
 //    onRegister: () -> Unit, // Acción Registro
     onUser: () -> Unit, //ACCION DEL PERFIL
     isAdmin: Boolean,
-    onAdminPanel: () -> Unit
-
+    onAdminPanel: () -> Unit,
+    onLogout: () -> Unit
 ): List<DrawerItem> {
     // Usamos una lista mutable para construirla dinámicamente
     val items = mutableListOf(
@@ -70,13 +72,21 @@ fun defaultDrawerItems(
         items.add(
             DrawerItem(
                 "Panel Admin",
-                Icons.Filled.AdminPanelSettings, // Ícono de admin
+                Icons.Filled.AdminPanelSettings,
                 onAdminPanel
             )
         )
     }
 
-    return items.toList() // Devolvemos la lista inmutable
+    items.add(
+        DrawerItem(
+            "Cerrar Sesión",
+            Icons.Filled.ExitToApp,
+            onLogout
+        )
+    )
+
+    return items.toList()
 }
 
 //= listOf(

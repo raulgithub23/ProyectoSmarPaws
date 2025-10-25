@@ -73,7 +73,7 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (tabIndex == 0) { // Pestaña Usuarios
-                FloatingActionButton(onClick = { /* Quizás crear USER? o mover el FAB */ }) {
+                FloatingActionButton(onClick = { /* para usuarios */ }) {
                     Icon(Icons.Default.Add, contentDescription = "Crear Usuario")
                 }
             } else { // Pestaña Doctores
@@ -126,7 +126,7 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
 
     // Diálogo para CREAR Doctor (User + Profile)
     if (showCreateDoctorDialog) {
-        CreateDoctorDialog( // <-- Este diálogo es MODIFICADO
+        CreateDoctorDialog(
             onDismiss = { showCreateDoctorDialog = false },
             onCreate = { name, email, phone, password, specialty ->
                 viewModel.createDoctor(name, email, phone, password, specialty)
@@ -417,7 +417,7 @@ fun CreateDoctorDialog(
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var specialty by rememberSaveable { mutableStateOf("") } // <-- NUEVO
+    var specialty by rememberSaveable { mutableStateOf("") }
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
@@ -456,7 +456,6 @@ fun CreateDoctorDialog(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Contraseña Temporal") },
-                    // ... (resto del campo de contraseña sin cambios) ...
                 )
             }
         },

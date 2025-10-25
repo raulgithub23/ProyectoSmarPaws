@@ -77,4 +77,7 @@ dependencies {
 
     //cargar imagenes con compose
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    //Data Storage
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }

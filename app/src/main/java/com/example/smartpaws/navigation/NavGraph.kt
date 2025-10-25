@@ -45,6 +45,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
+    startDestination: String,
     authViewModel: AuthViewModel,
     appointmentRepository: AppointmentRepository,
     doctorRepository: DoctorRepository,
@@ -56,7 +57,7 @@ fun AppNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path, // Comienza en Login
+        startDestination = startDestination,
         modifier = Modifier.fillMaxSize()
     ) {
         // ========== PANTALLAS DE AUTENTICACIÓN (sin Scaffold) ==========
@@ -115,37 +116,11 @@ fun AppNavGraph(
             }
         }
 
-//        // ========== APPOINTMENT CON PARÁMETRO petId ==========
-//        composable(
-//            route = "${Route.Appointment.path}/{petId}",
-//            arguments = listOf(
-//                navArgument("petId") {
-//                    type = NavType.LongType
-//                    defaultValue = 0L // Valor por defecto si no se pasa
-//                }
-//            )
-//        ) { backStackEntry ->
-//            val petId = backStackEntry.arguments?.getLong("petId") ?: 0L
-//
-//            MainScaffoldWrapper(navController) {
-//                AppointmentScreen(
-//                    viewModel = appointmentViewModel,
-//                    petId = petId,
-//                    onAppointmentCreated = {
-//                        // Navegar de vuelta al historial o home después de crear la cita
-//                        navController.navigate(Route.History.path) {
-//                            popUpTo(Route.Home.path)
-//                        }
-//                    }
-//                )
-//            }
-//        }
-
         // ========== RUTA ALTERNATIVA: Appointment sin petId específico ==========
         // Si el usuario va directamente desde el bottom bar sin seleccionar mascota
         composable(Route.Appointment.path) {
             val loginState by authViewModel.login.collectAsState()
-            val userId = loginState.userId ?: 1L // Usar 1L por defecto para testing
+            val userId = loginState.userId ?: 1L
 
             val appointmentViewModel: AppointmentViewModel = viewModel(
                 factory = AppointmentViewModelFactory(
@@ -228,7 +203,7 @@ private fun MainScaffoldWrapper(
     }
     val goLogin: () -> Unit = {
         navController.navigate(Route.Login.path) {
-            popUpTo(0) { inclusive = true }// Limpia todo el back stack
+            popUpTo(0) { inclusive = true }
         }
     }
 
@@ -236,6 +211,11 @@ private fun MainScaffoldWrapper(
         navController.navigate(Route.AdminPanel.path) {
             popUpTo(Route.Home.path)
         }
+    }
+
+    val onLogout: () -> Unit = {
+        authViewModel.logout()
+        goLogin()
     }
 
     val userProfile by authViewModel.userProfile.collectAsState()
@@ -246,7 +226,7 @@ private fun MainScaffoldWrapper(
         drawerContent = {
             AppDrawer(
                 currentRoute = currentRoute,
-                // --- MODIFICADO: Pasar nuevos parámetros ---
+                // --- 2. PASAR LA NUEVA ACCIÓN AL DRAWER ---
                 items = defaultDrawerItems(
                     onHome = {
                         scope.launch { drawerState.close() }
@@ -256,11 +236,14 @@ private fun MainScaffoldWrapper(
                         scope.launch { drawerState.close() }
                         goUser()
                     },
-                    // --- NUEVOS PARÁMETROS ---
                     isAdmin = isAdmin,
                     onAdminPanel = {
                         scope.launch { drawerState.close() }
                         goAdminPanel()
+                    },
+                    onLogout = {
+                        scope.launch { drawerState.close() }
+                        onLogout()
                     }
                 )
             )

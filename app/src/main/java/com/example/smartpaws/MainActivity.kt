@@ -8,6 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -28,6 +31,12 @@ import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.AuthViewModelFactory
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.example.smartpaws.data.local.storage.UserPreferences
+import com.example.smartpaws.navigation.Route
 import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AdminViewModelFactory
 import com.example.smartpaws.viewmodel.HomeViewModel
@@ -61,6 +70,8 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     val context = LocalContext.current.applicationContext
     // ^ Obtenemos el applicationContext para construir la base de datos de Room.
 
+    val userPreferences = remember { UserPreferences(context) }
+
     val db = AppDatabase.getInstance(context)
     // ^ Singleton de Room. No crea múltiples instancias.
 
@@ -91,11 +102,8 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
 
 
     val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(userRepository)
+        factory = AuthViewModelFactory(userRepository, userPreferences)
     )
-
-    val userId: Long? = authViewModel.login.collectAsState().value.userId
-
 
     val historyViewModelFactory = HistoryViewModelFactory(
         repository = appointmentRepository,
@@ -122,43 +130,58 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
         )
     )
 
-    val appointmentViewModel: AppointmentViewModel = viewModel(
-        factory = AppointmentViewModelFactory(
-            appointmentRepository,
-            doctorRepository,
-            petsViewModel,
-            userId
-        )
-    )
 
     val adminViewModel: AdminViewModel = viewModel(
         factory = AdminViewModelFactory(userRepository, doctorRepository)
     )
+    // estados clave del AuthViewModel para mantener la sesion iniciada por el localStarage (Por ID)
+    val isLoadingSession by authViewModel.isLoadingSession.collectAsState()
+    val loginState by authViewModel.login.collectAsState()
 
     // ====== TU NAVEGACIÓN ORIGINAL ======
     val navController = rememberNavController() // Controlador de navegación (igual que antes)
     SMARTPAWSTheme(dynamicColor = false) { // Provee colores/tipografías Material 3 (igual que antes)
         Surface(color = MaterialTheme.colorScheme.background) { // Fondo general (igual que antes)
 
-            // ====== MOD: pasamos los ViewModels a tu NavGraph ======
-            // Si tu AppNavGraph ya recibía el VM o lo creaba adentro, lo mejor ahora es PASARLO
-            // para que toda la app use la MISMA instancia que acabamos de inyectar.
-            AppNavGraph(
-                navController = navController,
-                authViewModel = authViewModel, // VM para Login/Register
-                historyViewModelFactory = historyViewModelFactory, // VM para Historial de citas
-                petsViewModel = petsViewModel,
-//                appointmentViewModel = appointmentViewModel,
-                appointmentRepository = appointmentRepository,
-                doctorRepository = doctorRepository,
-                homeViewModel = homeViewModel,
-                adminViewModel = adminViewModel
-            )
-            // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
-            // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }
-            // y luego pasar esos ViewModels a las pantallas donde se usen.
-            // Esto garantiza que todas las pantallas compartan la MISMA instancia del ViewModel
-            // y por lo tanto compartan el mismo estado.
+            if (isLoadingSession) {
+                // Mostramos una pantalla de carga simple. mientras obtenemos el localStorage del viewModel
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // ruta de inicio dinámicamente
+                val startDestination = if (loginState.userId != null) {
+                    // Si el userId NO es null
+                    Route.Home.path
+                } else {
+                    // Si es null
+                    Route.Login.path
+                }
+
+                // Le pasamos la ruta de inicio dinámica al NavGraph
+                // ====== MOD: pasamos los ViewModels a tu NavGraph ======
+                // Si tu AppNavGraph ya recibía el VM o lo creaba adentro, lo mejor ahora es PASARLO
+                // para que toda la app use la MISMA instancia que acabamos de inyectar.
+                AppNavGraph(
+                    navController = navController,
+                    authViewModel = authViewModel, // VM para Login/Register
+                    historyViewModelFactory = historyViewModelFactory, // VM para Historial de citas
+                    petsViewModel = petsViewModel,
+                    appointmentRepository = appointmentRepository,
+                    doctorRepository = doctorRepository,
+                    homeViewModel = homeViewModel,
+                    adminViewModel = adminViewModel,
+                    startDestination = startDestination,
+                )
+                // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
+                // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }
+                // y luego pasar esos ViewModels a las pantallas donde se usen.
+                // Esto garantiza que todas las pantallas compartan la MISMA instancia del ViewModel
+                // y por lo tanto compartan el mismo estado.
+            }
         }
     }
 }
