@@ -3,8 +3,10 @@ package com.example.smartpaws.view // O tu paquete de UI
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -19,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,6 +32,11 @@ import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
 import com.example.smartpaws.data.local.user.UserEntity
+import com.example.smartpaws.domain.validation.validateEmail
+import com.example.smartpaws.domain.validation.validateNameLettersOnly
+import com.example.smartpaws.domain.validation.validateNotEmpty
+import com.example.smartpaws.domain.validation.validatePhoneDigitsOnly
+import com.example.smartpaws.domain.validation.validateStrongPassword
 import com.example.smartpaws.viewmodel.AdminStats
 import com.example.smartpaws.viewmodel.AdminUiState
 import com.example.smartpaws.viewmodel.AdminViewModel
@@ -413,6 +421,7 @@ fun CreateDoctorDialog(
     onDismiss: () -> Unit,
     onCreate: (name: String, email: String, phone: String, password: String, specialty: String) -> Unit
 ) {
+    // --- Estados de los campos
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
@@ -420,49 +429,159 @@ fun CreateDoctorDialog(
     var specialty by rememberSaveable { mutableStateOf("") }
     var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
+    // --- Estados de error
+    var nameError by rememberSaveable { mutableStateOf<String?>(null) }
+    var emailError by rememberSaveable { mutableStateOf<String?>(null) }
+    var phoneError by rememberSaveable { mutableStateOf<String?>(null) }
+    var passwordError by rememberSaveable { mutableStateOf<String?>(null) }
+    var specialtyError by rememberSaveable { mutableStateOf<String?>(null) }
+
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Crear Nuevo Doctor") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                // --- Campo Nombre ---
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = {
+                        name = it
+                        if (nameError != null) nameError = null
+                    },
                     label = { Text("Nombre Completo") },
-                    singleLine = true
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = {
+                        nameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    },
+                    // Validar al perder el foco
+                    modifier = Modifier.onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            nameError = validateNameLettersOnly(name)
+                        }
+                    }
                 )
+
+                // --- Campo Email ---
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        if (emailError != null) emailError = null
+                    },
                     label = { Text("Email") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true
+                    singleLine = true,
+                    isError = emailError != null,
+                    supportingText = {
+                        emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    },
+                    modifier = Modifier.onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            emailError = validateEmail(email)
+                        }
+                    }
                 )
+
+                // --- Campo Teléfono ---
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = {
+                        phone = it
+                        if (phoneError != null) phoneError = null
+                    },
                     label = { Text("Teléfono") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
+                    singleLine = true,
+                    isError = phoneError != null,
+                    supportingText = {
+                        phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    },
+                    modifier = Modifier.onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            phoneError = validatePhoneDigitsOnly(phone)
+                        }
+                    }
                 )
-                // --- NUEVO CAMPO ---
+
+                // --- Campo Especialidad ---
                 OutlinedTextField(
                     value = specialty,
-                    onValueChange = { specialty = it },
+                    onValueChange = {
+                        specialty = it
+                        if (specialtyError != null) specialtyError = null
+                    },
                     label = { Text("Especialidad") },
-                    singleLine = true
+                    singleLine = true,
+                    isError = specialtyError != null,
+                    supportingText = {
+                        specialtyError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    },
+                    modifier = Modifier.onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            specialtyError = validateNotEmpty(specialty, "Especialidad")
+                        }
+                    }
                 )
+
+                // --- Campo Contraseña ---
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = {
+                        password = it
+                        if (passwordError != null) passwordError = null
+                    },
                     label = { Text("Contraseña Temporal") },
+                    isError = passwordError != null,
+                    visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                        val description = if (isPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                            Icon(image, description)
+                        }
+                    },
+                    supportingText = {
+                        passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    },
+                    modifier = Modifier.onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            passwordError = validateStrongPassword(password)
+                        }
+                    }
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = { onCreate(name, email, phone, password, specialty) }, // <-- Pasa 5 args
-                enabled = name.isNotBlank() && email.isNotBlank() && phone.isNotBlank() && password.isNotBlank() && specialty.isNotBlank() // <-- Check de 5 args
+                onClick = {
+                    // 3. Validar TODO al hacer clic en crear
+                    val vName = validateNameLettersOnly(name)
+                    val vEmail = validateEmail(email)
+                    val vPhone = validatePhoneDigitsOnly(phone)
+                    val vSpecialty = validateNotEmpty(specialty, "Especialidad")
+                    val vPassword = validateStrongPassword(password)
+
+                    // Asignar todos los errores (para mostrarlos si fallan)
+                    nameError = vName
+                    emailError = vEmail
+                    phoneError = vPhone
+                    specialtyError = vSpecialty
+                    passwordError = vPassword
+
+                    // Comprobar si todo es válido
+                    val isValid = vName == null && vEmail == null && vPhone == null &&
+                            vSpecialty == null && vPassword == null
+
+                    if (isValid) {
+                        onCreate(name, email, phone, password, specialty)
+                        onDismiss()
+                    }
+                }
             ) {
                 Text("Crear")
             }

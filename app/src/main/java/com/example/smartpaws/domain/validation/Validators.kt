@@ -40,3 +40,33 @@ fun validateConfirm(pass: String, confirm: String): String? {          // Confir
     if (confirm.isBlank()) return "Confirma tu contraseña"             // No vacío
     return if (pass != confirm) "Las contraseñas no coinciden" else null // Deben ser iguales
 }
+
+// --- VALIDADORES PARA MASCOTAS ---
+
+/**
+ * Valida el nombre de la mascota.
+ * 1. No debe estar vacío.
+ * 2. Debe tener al menos 3 caracteres.
+ */
+fun validatePetName(name: String): String? {
+    if (name.isBlank()) return "El nombre es obligatorio"
+    if (name.length < 3) return "Debe tener al menos 3 caracteres"
+    return null
+}
+
+/**
+ * Valida la fecha de nacimiento.
+ * 1. No debe estar vacía.
+ */
+fun validateBirthDate(date: String): String? {
+    if (date.isBlank()) return "La fecha de nacimiento es obligatoria. Ingrese un aproximado en caso de saber la exacta."
+    return null
+}
+/**
+ * Valida que un campo generico (Cualquiera).
+ * 1. No debe estar vacía.
+ */
+fun validateNotEmpty(field: String, fieldName: String): String? {
+    if (field.isBlank()) return "El campo '$fieldName' es obligatorio"
+    return null
+}

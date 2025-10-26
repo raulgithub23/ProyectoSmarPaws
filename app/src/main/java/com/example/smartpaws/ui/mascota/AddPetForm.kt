@@ -22,6 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.domain.validation.validateBirthDate
+import com.example.smartpaws.domain.validation.validatePetName
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPetForm(
@@ -31,7 +34,6 @@ fun AddPetForm(
     initialPet: PetsEntity? = null,
     modifier: Modifier = Modifier
 ) {
-    // Estados inicializados según si es edición o creación
     var nombre by rememberSaveable { mutableStateOf(initialPet?.name ?: "") }
     var especie by rememberSaveable { mutableStateOf(initialPet?.especie ?: "Perro") }
     var fechaNacimiento by rememberSaveable { mutableStateOf(initialPet?.fechaNacimiento ?: "") }
@@ -39,6 +41,10 @@ fun AddPetForm(
     var genero by rememberSaveable { mutableStateOf(initialPet?.genero ?: "M") }
     var color by rememberSaveable { mutableStateOf(initialPet?.color ?: "") }
     var notas by rememberSaveable { mutableStateOf(initialPet?.notas ?: "") }
+
+    var nombreError by rememberSaveable { mutableStateOf<String?>(null) }
+    var fechaNacimientoError by rememberSaveable { mutableStateOf<String?>(null) }
+
 
     Column(modifier = modifier.padding(16.dp)) {
         Text(
@@ -50,14 +56,22 @@ fun AddPetForm(
 
         OutlinedTextField(
             value = nombre,
-            onValueChange = { nombre = it },
+            onValueChange = {
+                nombre = it
+                nombreError = null
+            },
             label = { Text("Nombre") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = nombreError != null,
+            supportingText = {
+                if (nombreError != null) {
+                    Text(text = nombreError!!, color = MaterialTheme.colorScheme.error)
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Dropdown de especie
         DropdownSelector(
             label = "Especie",
             options = listOf("Perro", "Gato"),
@@ -70,9 +84,18 @@ fun AddPetForm(
 
         OutlinedTextField(
             value = fechaNacimiento,
-            onValueChange = { fechaNacimiento = it },
+            onValueChange = {
+                fechaNacimiento = it
+                fechaNacimientoError = null
+            },
             label = { Text("Fecha Nacimiento (yyyy-mm-dd)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = fechaNacimientoError != null,
+            supportingText = {
+                if (fechaNacimientoError != null) {
+                    Text(text = fechaNacimientoError!!, color = MaterialTheme.colorScheme.error)
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -86,7 +109,6 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Dropdown de género
         DropdownSelector(
             label = "Género",
             options = listOf("M", "F"),
@@ -113,23 +135,31 @@ fun AddPetForm(
             modifier = Modifier.fillMaxWidth()
         )
 
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                val petToSave = PetsEntity(
-                    id = initialPet?.id ?: 0L,
-                    userId = userId,
-                    name = nombre,
-                    especie = especie,
-                    fechaNacimiento = fechaNacimiento.ifBlank { null },
-                    peso = peso.toFloatOrNull(),
-                    genero = genero,
-                    color = color.ifBlank { null },
-                    notas = notas.ifBlank { null }
-                )
-                onSavePet(petToSave)
-                onDismiss()
+                nombreError = validatePetName(nombre)
+                fechaNacimientoError = validateBirthDate(fechaNacimiento)
+
+                val isValid = nombreError == null && fechaNacimientoError == null
+
+                if (isValid) {
+                    val petToSave = PetsEntity(
+                        id = initialPet?.id ?: 0L,
+                        userId = userId,
+                        name = nombre,
+                        especie = especie,
+                        fechaNacimiento = fechaNacimiento,
+                        peso = peso.toFloatOrNull(),
+                        genero = genero,
+                        color = color.ifBlank { null },
+                        notas = notas.ifBlank { null }
+                    )
+                    onSavePet(petToSave)
+                    onDismiss()
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
