@@ -10,6 +10,7 @@ import com.example.smartpaws.data.repository.AppointmentRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+
 // Estado de la pantalla Home
 data class HomeUiState(
     val currentFact: PetFactEntity? = null,
@@ -17,7 +18,7 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val errorMsg: String? = null
 )
-
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     private val repository: AppointmentRepository,
     private val petFactDao: PetFactDao,
@@ -47,26 +48,26 @@ class HomeViewModel(
 
                 // Cargar citas OBSERVANDO el userId
                 launch {
-                    authViewModel.login.collect { loginState ->
-                        if (loginState.userId != null) {
-                            repository.getUpcomingAppointmentsByUser(loginState.userId).collect { appointments ->
-                                _homeState.update {
-                                    it.copy(
-                                        upcomingAppointments = appointments,
-                                        isLoading = false
-                                    )
-                                }
+                    authViewModel.login
+                        .distinctUntilChangedBy { it.userId } // Solo reacciona cuando cambia el userId
+                        .flatMapLatest { loginState ->
+                            if (loginState.userId != null) {
+                                // Observa las citas en tiempo real para este usuario
+                                repository.getUpcomingAppointmentsByUser(loginState.userId)
+                            } else {
+                                // Si no hay usuario logueado, emite lista vacía
+                                flowOf(emptyList())
                             }
-                        } else {
+                        }
+                        .collect { appointments ->
                             _homeState.update {
                                 it.copy(
-                                    upcomingAppointments = emptyList(),
+                                    upcomingAppointments = appointments,
                                     isLoading = false,
-                                    errorMsg = null // Quitamos el error cuando no hay usuario
+                                    errorMsg = null
                                 )
                             }
                         }
-                    }
                 }
             } catch (e: Exception) {
                 _homeState.update {
