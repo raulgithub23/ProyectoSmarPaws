@@ -1,12 +1,18 @@
+package com.example.smartpaws.navigation
+
+import HistoryViewModel
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,8 +25,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
-import com.example.smartpaws.navigation.Route
 import com.example.smartpaws.ui.components.AppDrawer
+import com.example.smartpaws.ui.components.AppNavigationRail
 import com.example.smartpaws.ui.components.AppTopBar
 import com.example.smartpaws.ui.components.BottomNavigationBar
 import com.example.smartpaws.ui.components.defaultDrawerItems
@@ -46,6 +52,7 @@ import kotlinx.coroutines.launch
 fun AppNavGraph(
     navController: NavHostController,
     startDestination: String,
+    windowSizeClass: WindowSizeClass,
     authViewModel: AuthViewModel,
     appointmentRepository: AppointmentRepository,
     doctorRepository: DoctorRepository,
@@ -93,13 +100,13 @@ fun AppNavGraph(
         // ========== PANTALLAS PRINCIPALES (con Scaffold completo) ==========
         // Envolvemos todas las pantallas autenticadas en un Scaffold compartido
         composable(Route.Home.path) {
-            MainScaffoldWrapper(navController, authViewModel) {
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 HomeScreen(viewModel = homeViewModel)
             }
         }
 
         composable(Route.Pets.path) {
-            MainScaffoldWrapper(navController, authViewModel) {
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 PetsScreen(
                     petsViewModel = petsViewModel,
                     authViewModel = authViewModel
@@ -111,7 +118,7 @@ fun AppNavGraph(
             val historyViewModel: HistoryViewModel = viewModel(
                 factory = historyViewModelFactory
             )
-            MainScaffoldWrapper(navController, authViewModel) {
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 HistoryScreen(viewModel = historyViewModel)
             }
         }
@@ -132,7 +139,7 @@ fun AppNavGraph(
                 key = "appointment_$userId"
             )
 
-            MainScaffoldWrapper(navController, authViewModel) {
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 // Aquí podrías mostrar primero un selector de mascotas
                 // o redirigir a la pantalla de mascotas
                 AppointmentScreen(
@@ -148,13 +155,13 @@ fun AppNavGraph(
         }
 
         composable(Route.User.path) {
-            MainScaffoldWrapper(navController, authViewModel) {
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 UserScreen(authViewModel = authViewModel)
             }
         }
 
         composable(Route.AdminPanel.path) {
-            MainScaffoldWrapper(navController, authViewModel) {
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 // Aquí iría tu pantalla de UI para el admin
                 // Asumimos que tienes un composable llamado AdminPanelScreen
                 AdminPanelScreen(viewModel = adminViewModel)
@@ -167,6 +174,7 @@ fun AppNavGraph(
 private fun MainScaffoldWrapper(
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    windowSizeClass: WindowSizeClass,
     content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -221,6 +229,9 @@ private fun MainScaffoldWrapper(
     val userProfile by authViewModel.userProfile.collectAsState()
     val isAdmin = userProfile?.rol == "ADMIN"
 
+    // Para saber el tamaño de la pantalla actual si es compata o mas grande
+    val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -260,17 +271,30 @@ private fun MainScaffoldWrapper(
                 )
             },
             bottomBar = {
-                BottomNavigationBar(
-                    currentRoute = currentRoute,
-                    onHome = goHome,
-                    onAppointment = goAppointment,
-                    onPets = goPets,
-                    onHistory = goHistory
-                )
+                if (isCompact) {
+                    BottomNavigationBar(
+                        currentRoute = currentRoute,
+                        onHome = goHome,
+                        onAppointment = goAppointment,
+                        onPets = goPets,
+                        onHistory = goHistory
+                    )
+                }
             }
         ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                content()
+            Row(modifier = Modifier.padding(innerPadding)) {
+                if (!isCompact) {
+                    AppNavigationRail(
+                        currentRoute = currentRoute,
+                        onHome = goHome,
+                        onAppointment = goAppointment,
+                        onPets = goPets,
+                        onHistory = goHistory
+                    )
+                }
+                Box(modifier = Modifier.fillMaxSize()) {
+                    content()
+                }
             }
         }
     }

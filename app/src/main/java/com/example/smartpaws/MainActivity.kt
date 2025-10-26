@@ -1,7 +1,6 @@
 package com.example.smartpaws
 
-import AppNavGraph
-import HistoryViewModel
+import com.example.smartpaws.navigation.AppNavGraph
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,8 +27,6 @@ import com.example.smartpaws.data.repository.UserRepository
 import com.example.smartpaws.ui.mascota.PetsViewModel
 import com.example.smartpaws.ui.mascota.PetsViewModelFactory
 import com.example.smartpaws.ui.theme.SMARTPAWSTheme
-import com.example.smartpaws.viewmodel.AppointmentViewModel
-import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.AuthViewModelFactory
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
@@ -43,12 +43,14 @@ import com.example.smartpaws.viewmodel.HomeViewModel
 import com.example.smartpaws.viewmodel.HomeViewModelFactory
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AppRoot()
+            val windowSizeClass = calculateWindowSizeClass(this)
+            AppRoot(windowSizeClass = windowSizeClass)
         }
     }
 }
@@ -65,7 +67,7 @@ Tenemos que pensar en él como una "lona base" sobre la cual vas a pintar tu UI.
 * */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable // Indica que esta función dibuja UI
-fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
+fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar responsabilidades (se conserva)
     // ====== NUEVO: construcción de dependencias (Composition Root) ======
     val context = LocalContext.current.applicationContext
     // ^ Obtenemos el applicationContext para construir la base de datos de Room.
@@ -167,6 +169,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
                 // para que toda la app use la MISMA instancia que acabamos de inyectar.
                 AppNavGraph(
                     navController = navController,
+                    windowSizeClass = windowSizeClass,
                     authViewModel = authViewModel, // VM para Login/Register
                     historyViewModelFactory = historyViewModelFactory, // VM para Historial de citas
                     petsViewModel = petsViewModel,
