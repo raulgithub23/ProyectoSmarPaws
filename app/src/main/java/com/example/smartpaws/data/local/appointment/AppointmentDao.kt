@@ -7,7 +7,10 @@ import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import kotlinx.coroutines.flow.Flow
 
 
-
+/*
+* abstraer y definir la interfaz para interactuar con la base de datos (en este caso, la base de datos SQLite que Room maneja)
+* como el "traductor" entre tu código Kotlin/Java y la base de datos SQL
+* */
 @Dao
 interface AppointmentDao {
 

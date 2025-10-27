@@ -78,16 +78,6 @@ class PetsRepository(
         }
     }
 
-    // Contar mascotas
-    suspend fun countPets(): Result<Int> {
-        return try {
-            val count = petsDao.count()
-            Result.success(count)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     fun observePetsByUser(userId: Long): Flow<Result<List<PetsEntity>>> = flow {
         try {
             petsDao.observePetsByUser(userId).collect { pets ->

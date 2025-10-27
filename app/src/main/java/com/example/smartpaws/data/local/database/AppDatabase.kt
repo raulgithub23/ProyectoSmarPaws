@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
-    //integramos el DAO de cada entidad
+    //definir la estructura y el contrato de la base de datos, no el código detallado que la hace funcionar
     abstract fun userDao(): UserDao
     abstract fun petsDao(): PetsDao
     abstract fun doctorDao(): DoctorDao

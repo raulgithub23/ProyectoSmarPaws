@@ -38,7 +38,7 @@ import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
-import com.example.smartpaws.view.AdminPanelScreen
+import com.example.smartpaws.ui.screen.AdminPanelScreen
 import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
@@ -67,7 +67,7 @@ fun AppNavGraph(
         startDestination = startDestination,
         modifier = Modifier.fillMaxSize()
     ) {
-        // ========== PANTALLAS DE AUTENTICACIÓN (sin Scaffold) ==========
+        // PANTALLAS DE AUTENTICACIÓN (sin Scaffold)
         composable(Route.Login.path) {
             LoginScreenVm(
                 vm = authViewModel,
@@ -97,8 +97,8 @@ fun AppNavGraph(
             )
         }
 
-        // ========== PANTALLAS PRINCIPALES (con Scaffold completo) ==========
-        // Envolvemos todas las pantallas autenticadas en un Scaffold compartido
+        // PANTALLAS PRINCIPALES (con Scaffold completo)
+        // todas las pantallas autenticadas en un Scaffold compartido
         composable(Route.Home.path) {
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 HomeScreen(viewModel = homeViewModel)
@@ -123,7 +123,7 @@ fun AppNavGraph(
             }
         }
 
-        // ========== RUTA ALTERNATIVA: Appointment sin petId específico ==========
+        // RUTA ALTERNATIVA: Appointment sin petId específico
         // Si el usuario va directamente desde el bottom bar sin seleccionar mascota
         composable(Route.Appointment.path) {
             val loginState by authViewModel.login.collectAsState()
@@ -140,8 +140,6 @@ fun AppNavGraph(
             )
 
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
-                // Aquí podrías mostrar primero un selector de mascotas
-                // o redirigir a la pantalla de mascotas
                 AppointmentScreen(
                     viewModel = appointmentViewModel,
                     onAppointmentCreated = {
@@ -162,8 +160,6 @@ fun AppNavGraph(
 
         composable(Route.AdminPanel.path) {
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
-                // Aquí iría tu pantalla de UI para el admin
-                // Asumimos que tienes un composable llamado AdminPanelScreen
                 AdminPanelScreen(viewModel = adminViewModel)
             }
         }
@@ -179,7 +175,7 @@ private fun MainScaffoldWrapper(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    // Obtener la ruta actual para el bottom navigation
+    // la ruta actual para el bottom navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     // Helpers de navegación
@@ -237,7 +233,6 @@ private fun MainScaffoldWrapper(
         drawerContent = {
             AppDrawer(
                 currentRoute = currentRoute,
-                // --- 2. PASAR LA NUEVA ACCIÓN AL DRAWER ---
                 items = defaultDrawerItems(
                     onHome = {
                         scope.launch { drawerState.close() }

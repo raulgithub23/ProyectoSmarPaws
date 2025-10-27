@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
@@ -18,34 +19,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
-// Pequeña data class para representar cada opción del drawer
-data class DrawerItem( // Estructura de un ítem de menú lateral
-    val label: String, // Texto a mostrar
-    val icon: ImageVector, // Ícono del ítem
+data class DrawerItem(
+    val label: String,
+    val icon: ImageVector,
     val onClick: () -> Unit // Acción al hacer click
 )
 
-@Composable // Componente Drawer para usar en ModalNavigationDrawer
+@Composable
 fun AppDrawer(
-    currentRoute: String?, // Ruta actual (para marcar seleccionado si quieres)
-    items: List<DrawerItem>, // Lista de ítems a mostrar
-    modifier: Modifier = Modifier // Modificador opcional
+    currentRoute: String?, // Ruta actual (para marcar seleccionado)
+    items: List<DrawerItem>,
+    modifier: Modifier = Modifier
 ) {
-    ModalDrawerSheet( // Hoja que contiene el contenido del drawer
-        modifier = modifier // Modificador encadenable
+    ModalDrawerSheet(
+        modifier = modifier
     ) {
-        // Recorremos las opciones y pintamos ítems
-        items.forEach { item -> // Por cada ítem
-            NavigationDrawerItem( // Ítem con estados Material
-                label = { Text(item.label) }, // Texto visible
-                selected = false, // Puedes usar currentRoute == ... si quieres marcar
-                onClick = item.onClick, // Acción al pulsar
-                icon = { Icon(item.icon, contentDescription = item.label) }, // Ícono
-                modifier = Modifier, // Sin mods extra
+        items.forEach { item ->
+            NavigationDrawerItem(
+                label = { Text(item.label) },
+                selected = false, // SE PUEDE PASAR CURRENTRUTE
+                onClick = item.onClick,
+                icon = { Icon(item.icon, contentDescription = item.label) },
+                modifier = Modifier,
                 colors = NavigationDrawerItemDefaults.colors(
-                    selectedContainerColor = Color(0xFF4CA771) // tu color personalizado
+                    selectedContainerColor = MaterialTheme.colorScheme.primary// 0xFF4CA771
                 )
-            ) // Estilo por defecto
+            )
         }
     }
 }
@@ -67,11 +66,11 @@ fun defaultDrawerItems(
         DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
     )
 
-    // --- LÓGICA CONDICIONAL ---
+    // LÓGICA CONDICIONAL PARA MOSTRAR LA OPCION DE ADMIN
     if (isAdmin) {
         items.add(
             DrawerItem(
-                "Panel Admin",
+                "Panel de Administración ",
                 Icons.Filled.AdminPanelSettings,
                 onAdminPanel
             )

@@ -12,6 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.example.smartpaws.navigation.Route
 
+
+// COMPOSABLE PARA MOSTRAR CUANDO ESTE EN MODO EXTENDED LA PANTALLA
+// HACE QUE LA BARRA DE BOTTOMBAR ESTA A LA IZQUIERDA AL DETECTAR UN ANCHO MAYOR
+// A COMPACT
 @Composable
 fun AppNavigationRail(
     currentRoute: String?,

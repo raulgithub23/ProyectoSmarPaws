@@ -59,7 +59,7 @@ class PetsViewModel(
         // Limpia el estado anterior antes de cargar el nuevo usuario
         _uiState.update { it.copy(petsList = emptyList(), isLoading = true, error = null) }
 
-        // Nueva suscripción al Flow del usuario actual
+        // suscripción al Flow del usuario actual
         observePetsJob = viewModelScope.launch {
             repository.observePetsByUser(userId).collect { result ->
                 result.onSuccess { pets ->
@@ -161,21 +161,6 @@ class PetsViewModel(
                         isLoading = false,
                         error = e.message ?: "Error al eliminar mascota"
                     )
-                }
-            }
-        }
-    }
-    private fun observePets(userId: Long) {
-        viewModelScope.launch {
-            repository.observePetsByUser(userId).collect { result ->
-                result.onSuccess { pets ->
-                    _uiState.update {
-                        it.copy(petsList = pets, isLoading = false, error = null)
-                    }
-                }.onFailure { e ->
-                    _uiState.update {
-                        it.copy(isLoading = false, error = e.message ?: "Error al cargar mascotas")
-                    }
                 }
             }
         }

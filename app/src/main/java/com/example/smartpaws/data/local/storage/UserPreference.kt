@@ -14,7 +14,7 @@ class UserPreferences(private val context: Context) {
     //almacenar el ID del usuario (un Long)
     private val LOGGED_IN_USER_ID_KEY = longPreferencesKey("logged_in_user_id")
 
-    // 2. Flow para observar el ID. Emite null si no hay nadie logueado.
+    // Flow para observar el ID. Emite null si no hay nadie logueado.
     val loggedInUserId: Flow<Long?> = context.dataStore.data
         .map { prefs ->
             prefs[LOGGED_IN_USER_ID_KEY]

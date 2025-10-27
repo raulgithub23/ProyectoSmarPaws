@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,7 +51,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.R
-import com.example.smartpaws.ui.theme.LightBackground
 
 @Composable
 fun LoginScreenVm(

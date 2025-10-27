@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,12 +40,14 @@ import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.ui.theme.LightBackground
 import com.example.smartpaws.ui.theme.LightSecondary
+import androidx.compose.animation.animateContentSize
+import androidx.compose.material3.HorizontalDivider
 
 @Composable
 fun HistoryScreen(
     viewModel: HistoryViewModel
 ) {
-    val bg = LightBackground
+    val bg = MaterialTheme.colorScheme.background
     val cardColor = LightSecondary
     val textColor = DarkGreen
     val state by viewModel.historyState.collectAsState()
@@ -102,7 +103,8 @@ fun HistoryCard(
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 8.dp)
+            .animateContentSize(), // ANIMACION NATIVA DE MATERIAL3 COMPOSE
         colors = CardDefaults.elevatedCardColors(containerColor = cardColor),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
     ) {
@@ -154,7 +156,7 @@ fun HistoryCard(
             // Información expandida
             if (expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Divider(color = textColor.copy(alpha = 0.3f))
+                HorizontalDivider(color = textColor.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(

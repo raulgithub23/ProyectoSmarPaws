@@ -1,4 +1,4 @@
-package com.example.smartpaws.view // O tu paquete de UI
+package com.example.smartpaws.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,7 +41,6 @@ import com.example.smartpaws.viewmodel.AdminStats
 import com.example.smartpaws.viewmodel.AdminUiState
 import com.example.smartpaws.viewmodel.AdminViewModel
 
-// --- Este es el Composable principal de la pantalla ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,7 +99,7 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
         ) {
 
             // PESTAÑAS
-            TabRow(selectedTabIndex = tabIndex) {
+            PrimaryTabRow(selectedTabIndex = tabIndex) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         text = { Text(title) },
@@ -401,7 +400,7 @@ fun UserListItem(
                     color = when (user.rol) {
                         "ADMIN" -> MaterialTheme.colorScheme.error
                         "DOCTOR" -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> MaterialTheme.colorScheme.primary
                     }
                 )
             }
@@ -735,7 +734,10 @@ fun ManageScheduleDialog(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider()
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // --- Sección para ver horarios actuales (y eliminarlos) ---

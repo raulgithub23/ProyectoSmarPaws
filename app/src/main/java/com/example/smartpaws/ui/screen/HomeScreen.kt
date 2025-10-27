@@ -31,9 +31,9 @@ fun HomeScreen(
 ) {
     val homeState by viewModel.homeState.collectAsState()
 
-    val bg = LightSecondary
-    val cardColor = LightBackground
-    val textColor = DarkGreen
+    val bg = MaterialTheme.colorScheme.background
+    val cardColor = MaterialTheme.colorScheme.secondary
+    val textColor = MaterialTheme.colorScheme.onBackground
 
     Box(
         modifier = Modifier
@@ -52,7 +52,7 @@ fun HomeScreen(
                 Text(
                     text = "¡Bienvenido a SmartPaws!",
                     style = MaterialTheme.typography.headlineLarge,
-                    color = Color.White,
+                    color = Color.Black,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -80,13 +80,13 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = Color.Black,
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
                             text = "Próximas Citas",
                             style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
+                            color = Color.Black,
                             fontWeight = FontWeight.Bold
                         )
                     }

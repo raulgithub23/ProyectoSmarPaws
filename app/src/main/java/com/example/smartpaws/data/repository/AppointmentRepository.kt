@@ -10,19 +10,9 @@ class AppointmentRepository(
     private val appointmentDao: AppointmentDao
 ) {
 
-    // Flow para obtener todas las citas (reactivo)
-    fun getAllAppointments(): Flow<List<AppointmentWithDetails>> {
-        return appointmentDao.getAllAppointments()
-    }
-
     // Flow para citas de un usuario específico
     fun getAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
         return appointmentDao.getAppointmentsByUser(userId)
-    }
-
-    // Flow para próximas 3 citas (todas)
-    fun getUpcomingAppointments(): Flow<List<AppointmentWithDetails>> {
-        return appointmentDao.getUpcomingAppointments()
     }
 
     //Flow para próximas 3 citas de un usuario
@@ -78,7 +68,4 @@ class AppointmentRepository(
             Result.failure(e)
         }
     }
-
-
-
 }

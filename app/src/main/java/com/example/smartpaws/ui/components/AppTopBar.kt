@@ -29,7 +29,7 @@ fun AppTopBar(
 
     CenterAlignedTopAppBar( // Barra alineada al centro
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color(0xFF4CA771) //Verde medio para la barra de arriba
+            containerColor = MaterialTheme.colorScheme.primary
         ),
         title = { // Slot del título
             Text(
@@ -37,7 +37,7 @@ fun AppTopBar(
                 style = MaterialTheme.typography.titleLarge, // Estilo grande
                 maxLines = 1,              // asegura una sola línea Int.MAX_VALUE   // permite varias líneas
                 overflow = TextOverflow.Ellipsis, // agrega "..." si no cabe
-                color = Color(0xFFFFFFFF)
+                color = MaterialTheme.colorScheme.background
 
             )
         },
