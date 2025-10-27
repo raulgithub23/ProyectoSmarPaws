@@ -90,6 +90,8 @@ fun UserScreen(
     var showImageDialog by remember { mutableStateOf(false) }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
     var lastImagePath by remember { mutableStateOf<String?>(null) }
+    val imagePath = userProfile?.profileImagePath
+
 
     //Launcher para la cámara (debe estar ANTES de usarse)
     val takePictureLauncher = rememberLauncherForActivityResult(
@@ -179,12 +181,10 @@ fun UserScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
                         // Mostrar imagen del usuario o el gato larry xd por defecto
-                        if (userProfile?.profileImagePath != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(Uri.parse(userProfile?.profileImagePath))
-                                    .crossfade(true)
-                                    .build(),
+                        if (imagePath != null && imagePath.startsWith("drawable://")) {
+                            // Es una imagen por defecto de la BD de nosotros
+                            Image(
+                                painter = painterResource(R.drawable.larry),
                                 contentDescription = "Foto de perfil",
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -192,7 +192,23 @@ fun UserScreen(
                                     .border(3.dp, textColor, CircleShape),
                                 contentScale = ContentScale.Crop
                             )
+                        } else if (imagePath != null) {
+                            // Es una URI de archivo o galería del propio usuario
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(Uri.parse(imagePath))
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Foto de perfil",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .border(3.dp, textColor, CircleShape),
+                                contentScale = ContentScale.Crop,
+                                error = painterResource(R.drawable.larry)
+                            )
                         } else {
+                            // Y si no encuentra una imagen en el perfil le muestra larry el gato
                             Image(
                                 painter = painterResource(R.drawable.larry),
                                 contentDescription = "Foto de perfil",

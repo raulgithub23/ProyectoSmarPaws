@@ -12,7 +12,7 @@ data class UserEntity(
     val email: String,             // Obligatorio
     val phone: String,    // Obligatorio
     val password: String,         // Obligatorio
-    val profileImagePath: String? = null //Ruta de la foto de perfil
+    val profileImagePath: String? = "drawable://larry" //Ruta de la foto de perfil se actualiza para que sea por defecto
 
 )
 

@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
         AppointmentEntity::class,
         PetFactEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
@@ -77,14 +77,18 @@ abstract class AppDatabase: RoomDatabase(){
                                         name = "Admin",
                                         email = "a@a.cl",
                                         phone = "12345678",
-                                        password = "Admin123!"
+                                        password = "Admin123!",
+                                        profileImagePath = "drawable://larry" // Imagen por defecto
+
                                     ),
                                     UserEntity(
                                         rol = "USER",
                                         name = "Jose",
                                         email = "b@b.cl",
                                         phone = "12345678",
-                                        password = "Jose123!"
+                                        password = "Jose123!",
+                                        profileImagePath = "drawable://larry" // Imagen por defecto
+
                                     )
                                 )
                                 //INSERTAR SI NO HAY REGISTRO EN LA TABLA
