@@ -38,15 +38,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
+import com.example.smartpaws.ui.theme.DarkGreen
+import com.example.smartpaws.ui.theme.LightBackground
+import com.example.smartpaws.ui.theme.LightSecondary
 
 @Composable
 fun HistoryScreen(
     viewModel: HistoryViewModel
 ) {
-    val bg = Color(0xFFEAF9E7)
-    val cardColor = Color(0xFFC0E6BA)
-    val textColor = Color(0xFF013237)
-
+    val bg = LightBackground
+    val cardColor = LightSecondary
+    val textColor = DarkGreen
     val state by viewModel.historyState.collectAsState()
 
     Box(

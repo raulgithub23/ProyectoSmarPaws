@@ -78,7 +78,7 @@ fun PetsScreen(
         // Diálogo para agregar o editar mascota
         if (showAddPetDialog) {
             DialogAddPetForm(
-                userId = editingPet?.userId ?: currentUserId, // 🔥 userId correcto según login
+                userId = editingPet?.userId ?: currentUserId, // userId correcto según login
                 initialPet = editingPet,
                 onDismiss = {
                     showAddPetDialog = false

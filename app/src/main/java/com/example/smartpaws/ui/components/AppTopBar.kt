@@ -2,10 +2,7 @@ package com.example.smartpaws.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,33 +45,6 @@ fun AppTopBar(
             IconButton(onClick = onOpenDrawer) { // Al presionar, abre drawer
                 Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White) // Ícono
 
-            }
-        },
-        actions = { // Acciones a la derecha (solo menú overflow)
-            IconButton(onClick = { showMenu = true }) { // Abre menú overflow
-                Icon(Icons.Filled.MoreVert, contentDescription = "Más", tint = Color.White) // Ícono 3 puntitos
-            }
-            DropdownMenu(
-                expanded = showMenu, // Si está abierto
-                onDismissRequest = { showMenu = false } // Cierra al tocar fuera
-            ) {
-                DropdownMenuItem( // Opción Home
-                    text = { Text("Home") }, // Texto opción
-                    onClick = { showMenu = false; onHome() } // Navega y cierra
-                )
-                DropdownMenuItem( // Opción Login
-                    text = { Text("Login") },
-                    onClick = { showMenu = false; onLogin() }
-                )
-                DropdownMenuItem( // Opción Registro
-                    text = { Text("Registro") },
-                    onClick = { showMenu = false; onRegister() }
-                )
-
-                DropdownMenuItem(
-                    text = { Text("Perfil") },
-                    onClick = { showMenu = false; onUser() }
-                )
             }
         }
     )

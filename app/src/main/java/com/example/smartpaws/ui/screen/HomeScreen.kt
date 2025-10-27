@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import com.example.smartpaws.R
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.pets.PetFactEntity
+import com.example.smartpaws.ui.theme.DarkGreen
+import com.example.smartpaws.ui.theme.LightBackground
+import com.example.smartpaws.ui.theme.LightSecondary
 import com.example.smartpaws.viewmodel.HomeViewModel
 
 @Composable
@@ -28,9 +31,9 @@ fun HomeScreen(
 ) {
     val homeState by viewModel.homeState.collectAsState()
 
-    val bg = Color(0xFFC0E6BA)
-    val cardColor = Color(0xFFEAF9E7)
-    val textColor = Color(0xFF013237)
+    val bg = LightSecondary
+    val cardColor = LightBackground
+    val textColor = DarkGreen
 
     Box(
         modifier = Modifier

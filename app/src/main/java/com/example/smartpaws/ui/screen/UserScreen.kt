@@ -55,6 +55,9 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.smartpaws.R
+import com.example.smartpaws.ui.theme.DarkGreen
+import com.example.smartpaws.ui.theme.LightBackground
+import com.example.smartpaws.ui.theme.LightSecondary
 import com.example.smartpaws.viewmodel.AuthViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -138,9 +141,9 @@ fun UserScreen(
         }
     }
 
-    val bg = Color(0xFFEAF9E7)
-    val cardColor = Color(0xFFF8F9FA)
-    val textColor = Color(0xFF013237)
+    val bg = LightBackground
+    val cardColor = LightSecondary
+    val textColor = DarkGreen
 
     Box(
         modifier = Modifier

@@ -32,7 +32,7 @@ import com.example.smartpaws.ui.components.BottomNavigationBar
 import com.example.smartpaws.ui.components.defaultDrawerItems
 import com.example.smartpaws.ui.mascota.PetsScreen
 import com.example.smartpaws.ui.mascota.PetsViewModel
-import com.example.smartpaws.ui.screen.screenprocesspayment.AppointmentScreen
+import com.example.smartpaws.ui.screen.AppointmentScreen
 import com.example.smartpaws.ui.screen.HistoryScreen
 import com.example.smartpaws.ui.screen.HomeScreen
 import com.example.smartpaws.ui.screen.LoginScreenVm
