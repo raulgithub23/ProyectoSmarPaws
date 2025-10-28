@@ -34,7 +34,7 @@ class AppointmentRepository(
         }
     }
 
-    // Crear cita (como el register del profe)
+    // Crear cita como el register del profe
     suspend fun createAppointment(
         userId: Long?,
         petId: Long,

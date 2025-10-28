@@ -78,9 +78,8 @@ fun AppointmentScreen(
     val green = Color(0xFF00C853)
     val lightGreen = Color(0xFFE8F5E9)
 
-    val uiState by viewModel.uiState.collectAsState()
-    var showSuccessDialog by remember { mutableStateOf(false) }
-
+    val uiState by viewModel.uiState.collectAsState() // Observa el estado del ViewModel
+    var showSuccessDialog by remember { mutableStateOf(false) } // Controla diálogo de éxito
     var appointmentToDelete by remember { mutableStateOf<AppointmentWithDetails?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 

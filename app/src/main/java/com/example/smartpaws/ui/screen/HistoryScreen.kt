@@ -38,19 +38,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.ui.theme.DarkGreen
-import com.example.smartpaws.ui.theme.LightBackground
 import com.example.smartpaws.ui.theme.LightSecondary
 import androidx.compose.animation.animateContentSize
 import androidx.compose.material3.HorizontalDivider
+import com.example.smartpaws.ui.theme.LightBackground
 
 @Composable
 fun HistoryScreen(
-    viewModel: HistoryViewModel
+    viewModel: HistoryViewModel //parametro que se conecta con viewmodel
 ) {
-    val bg = MaterialTheme.colorScheme.background
-    val cardColor = LightSecondary
+    val bg = LightSecondary
+    val cardColor = LightBackground
     val textColor = DarkGreen
-    val state by viewModel.historyState.collectAsState()
+    val state by viewModel.historyState.collectAsState() //variable que nos trae los datos del viewmodel a medida que cambian
 
     Box(
         modifier = Modifier
@@ -70,16 +70,16 @@ fun HistoryScreen(
                 color = textColor
             )
 
-            if (state.appointments.isEmpty()) {
+            if (state.appointments.isEmpty()) { //Ester if captura si tuvo alguno cita con la mascota, si no printea lo de abajo
                 Text(
-                    text = "",
+                    text = "Aún no tienes citas en el historial",
                     color = textColor
                 )
             } else {
-                LazyColumn(
+                LazyColumn(//el lazy column solo va a crear y dibujar elementos que caigan en la pantalla en vez de cargar todos los datos
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(state.appointments) { appointment ->
+                    items(state.appointments) { appointment -> //se itera sobre la lista de citas pasdas y la añade a la carta
                         HistoryCard(
                             appointment = appointment,
                             cardColor = cardColor,
@@ -98,13 +98,13 @@ fun HistoryCard(
     cardColor: Color,
     textColor: Color
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) } //Se crea la variable expaded y se le establece un estado false para que se muestra contraida la tarjeta
 
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .animateContentSize(), // ANIMACION NATIVA DE MATERIAL3 COMPOSE
+            .animateContentSize(), // ANIMACION NATIVA DE MATERIAL3 COMPOSE, esto hace que se contraiga y se expanda la tarjeta
         colors = CardDefaults.elevatedCardColors(containerColor = cardColor),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
     ) {
@@ -153,7 +153,7 @@ fun HistoryCard(
                 }
             }
 
-            // Información expandida
+            // Información expandida por boton ver mas se agrega info adicional de la cita
             if (expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = textColor.copy(alpha = 0.3f))

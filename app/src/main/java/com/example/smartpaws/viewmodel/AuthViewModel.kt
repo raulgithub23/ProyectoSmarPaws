@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
+// Data class que representa el estado completo de la pantalla de Login
+
 data class LoginUiState(                                   // Estado de la pantalla Login
     val userId: Long? = null,
     val email: String = "",                                // Campo email
@@ -28,6 +31,8 @@ data class LoginUiState(                                   // Estado de la panta
     val success: Boolean = false,                          // Resultado OK
     val errorMsg: String? = null                           // Error global (credenciales inválidas)
 )
+
+// Data class que representa el estado completo de la pantalla de Registro
 
 data class RegisterUiState(                                // Estado de la pantalla Registro (<= 5 campos)
     val name: String = "",                                 // 1) Nombre
@@ -54,11 +59,11 @@ data class RegisterUiState(                                // Estado de la panta
 
 class AuthViewModel(
     // NUEVO: 4.- inyectamos el repositorio real que usa Room/SQLite
-    private val repository: UserRepository,
-    private val userPreferences: UserPreferences
+    private val repository: UserRepository, // Repositorio que accede a la BD de usuarios
+    private val userPreferences: UserPreferences  // Almacenamiento local para persistir sesion
 ) : ViewModel() {                         // ViewModel que maneja Login/Registro
 
-    private val _isLoadingSession = MutableStateFlow(true)
+    private val _isLoadingSession = MutableStateFlow(true) // Estado para indicar si está verificando si hay sesión activa
     val isLoadingSession: StateFlow<Boolean> = _isLoadingSession
 
     // Flujos de estado para observar desde la UI
@@ -67,12 +72,12 @@ class AuthViewModel(
 
     private val _register = MutableStateFlow(RegisterUiState()) // Estado interno (Registro)
 
-    private val _userProfile = MutableStateFlow<UserEntity?>(null)
+    private val _userProfile = MutableStateFlow<UserEntity?>(null)     // Estado del perfil del usuario logueado
     val userProfile: StateFlow<UserEntity?> = _userProfile
     val register: StateFlow<RegisterUiState> = _register        // Exposición inmutable
 
-    init {
-        checkActiveSession()
+    init { // Bloque init: se ejecuta al crear el ViewModel
+        checkActiveSession() // Verifica si hay una sesión activa al iniciar la app
     }
 
     private fun checkActiveSession() {
@@ -150,6 +155,12 @@ class AuthViewModel(
         }
     }
 
+
+    /**
+     * Carga el perfil completo del usuario desde la BD
+     *
+     * @param userId: ID del usuario a cargar
+     */
     private fun loadUserProfile(userId: Long) {
         viewModelScope.launch {
             try {
@@ -161,6 +172,11 @@ class AuthViewModel(
         }
     }
 
+    /**
+     * Actualiza la imagen de perfil del usuario
+     *
+     * @param imagePath: Ruta o URI de la nueva imagen
+     */
     fun updateProfileImage(imagePath: String) {
         viewModelScope.launch {
             try {
@@ -179,6 +195,15 @@ class AuthViewModel(
         _login.update { it.copy(success = false, errorMsg = null) }
     }
 
+
+    /**
+     * Cierra la sesión del usuario
+     *
+     * ACCIONES:
+     * 1. Limpia el userId de UserPreferences
+     * 2. Reinicia el estado de login
+     * 3. Limpia el perfil del usuario
+     */
     fun logout() {
         viewModelScope.launch {
             userPreferences.clearSession()

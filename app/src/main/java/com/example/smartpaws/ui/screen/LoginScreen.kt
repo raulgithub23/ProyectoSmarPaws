@@ -83,16 +83,16 @@ fun LoginScreenVm(
 @Composable
 private fun LoginScreen(
     modifier: Modifier = Modifier,
-    email: String,
+    email: String, //correo y contra se toma el valor actual
     pass: String,
-    emailError: String?,
+    emailError: String?, //correo y contra errorms, indica sy hay error y null si no hay error
     passError: String?,
-    canSubmit: Boolean,
+    canSubmit: Boolean,  //nos dice si podemso enviar el formulario
     isSubmitting: Boolean,
     errorMsg: String?,
-    onEmailChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit, // el onemail y password son callbacks cuando se cambian
     onPassChange: (String) -> Unit,
-    onSubmit: () -> Unit,
+    onSubmit: () -> Unit, //Submit y registro son callback
     onGoRegister: () -> Unit
 ) {
     val bg = DarkGreen
@@ -159,9 +159,9 @@ private fun LoginScreen(
                 value = email,
                 onValueChange = onEmailChange,
                 label = { Text("Email", color = Color.White.copy(alpha = 0.8f)) },
-                singleLine = true,
-                isError = emailError != null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true, // Solo permite una línea de texto
+                isError = emailError != null, // Muestra estilo de error si hay mensaje de error
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), // Teclado optimizado para email
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
@@ -173,6 +173,7 @@ private fun LoginScreen(
                     errorCursorColor = Color(0xFFFFCDD2)
                 )
             )
+            // Muestra el mensaje de error del email si existe si no retorna un null
             if (emailError != null) {
                 Text(
                     text = emailError,
@@ -192,7 +193,8 @@ private fun LoginScreen(
                 onValueChange = onPassChange,
                 label = { Text("Contraseña", color = Color.White.copy(alpha = 0.8f)) },
                 singleLine = true,
-                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(), // Transforma el texto en puntos si showPass es false
+                // Icono para mostrar/ocultar contraseña
                 trailingIcon = {
                     IconButton(onClick = { showPass = !showPass }) {
                         Icon(
@@ -214,6 +216,7 @@ private fun LoginScreen(
                     errorCursorColor = Color(0xFFFFCDD2)
                 )
             )
+            // Muestra el mensaje de error de la contraseña si existe si no retonar un nulo
             if (passError != null) {
                 Text(
                     text = passError,
@@ -230,7 +233,7 @@ private fun LoginScreen(
             // Botón Entrar
             Button(
                 onClick = onSubmit,
-                enabled = canSubmit && !isSubmitting,
+                enabled = canSubmit && !isSubmitting, // Solo habilitado si puede enviar y no está procesando
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -242,6 +245,7 @@ private fun LoginScreen(
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
+                // nos muestra un indicador de carga mientras se está enviando
                 if (isSubmitting) {
                     CircularProgressIndicator(
                         strokeWidth = 2.dp,

@@ -26,15 +26,16 @@ import com.example.smartpaws.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel,
-    onNavigateToAppointments: () -> Unit = {}
+    viewModel: HomeViewModel, //parametro que se conecta con viewmodel
+    onNavigateToAppointments: () -> Unit = {} //lo usamos para el boton agendar citas
 ) {
-    val homeState by viewModel.homeState.collectAsState()
+    val homeState by viewModel.homeState.collectAsState() //variable que nos trae los datos del viewmodel a medida que cambian
 
-    val bg = MaterialTheme.colorScheme.background
-    val cardColor = MaterialTheme.colorScheme.secondary
-    val textColor = MaterialTheme.colorScheme.onBackground
+    val bg = LightSecondary
+    val cardColor = LightBackground
+    val textColor = DarkGreen
 
+    //contenedor principal que  nos va ocupar toda la pantalla
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -57,14 +58,13 @@ fun HomeScreen(
                 )
             }
 
-            // Tarjeta de dato curioso
             item {
-                homeState.currentFact?.let { fact ->
+                homeState.currentFact?.let { fact -> //es la variable que contieen el dato curioso
                     PetFactCard(
                         fact = fact,
                         cardColor = cardColor,
                         textColor = textColor,
-                        onRefresh = { viewModel.refreshFact() }
+                        onRefresh = { viewModel.refreshFact() }// Callback para refrescar el dato
                     )
                 }
             }
@@ -92,7 +92,7 @@ fun HomeScreen(
                     }
                 }
 
-                items(homeState.upcomingAppointments) { appointment ->
+                items(homeState.upcomingAppointments) { appointment -> //se itera sobre la lista de citas y la añade a la carta
                     AppointmentCard(
                         appointment = appointment,
                         cardColor = cardColor,
@@ -101,6 +101,7 @@ fun HomeScreen(
                 }
             } else {
                 item {
+                    // Si no hay citas, muestra una tarjeta invitando a crear una
                     NoAppointmentsCard(
                         cardColor = cardColor,
                         textColor = textColor,
@@ -138,10 +139,10 @@ fun HomeScreen(
 // Tarjeta de dato curioso con botón refrescar
 @Composable
 fun PetFactCard(
-    fact: PetFactEntity,
+    fact: PetFactEntity, // Entidad o tabla que contiene el dato curioso
     cardColor: Color,
     textColor: Color,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit //funsion que se ejecuta al presionar refrescar
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -192,7 +193,7 @@ fun PetFactCard(
                     color = textColor
                 )
 
-                // Botón refrescar
+                // Boton refrescar a la derecha
                 TextButton(
                     onClick = onRefresh,
                     modifier = Modifier.align(Alignment.End)

@@ -16,25 +16,27 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.DayOfWeek.*
+
+//ACÁ SE MANEJA TODA LA LOGICA DE LA VISTA DE CITAS DE MASCOTAS
 @RequiresApi(Build.VERSION_CODES.O)
 class AppointmentViewModel(
-    private val repository: AppointmentRepository,
-    private val doctorRepository: DoctorRepository,
-    private val petsViewModel: PetsViewModel,
-    private val userId: Long?
+    private val repository: AppointmentRepository, // Repositorio para operaciones CRUD de citas nos sirve de mucho
+    private val doctorRepository: DoctorRepository, // Repositorio para obtener doctores
+    private val petsViewModel: PetsViewModel, // ViewModel de mascotas para obtener las mascotas del usuario
+    private val userId: Long? // ID del usuario actual (nullable por seguridad)
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AppointmentUiState())
-    val uiState: StateFlow<AppointmentUiState> = _uiState
+    private val _uiState = MutableStateFlow(AppointmentUiState())     // Estado privado mutable que solo el ViewModel puede modificar
+    val uiState: StateFlow<AppointmentUiState> = _uiState // Estado publico inmutable que la UI (Pantalla de citas) puede observar
 
+    // Bloque init: se ejecuta al crear el ViewModel
     init {
         loadDoctors()
         observeUserPets()
         observeUserAppointments()
     }
 
-    private fun observeUserPets() {
-        // Observa el estado de mascotas del PetsViewModel
+    private fun observeUserPets() {         // Observa el estado de mascotas del PetsViewModel
         viewModelScope.launch {
             petsViewModel.uiState.collect { petsState ->
                 _uiState.update { it.copy(userPets = petsState.petsList) }
@@ -42,7 +44,7 @@ class AppointmentViewModel(
         }
     }
 
-    private fun observeUserAppointments() {
+    private fun observeUserAppointments() {  // Observa y actualiza las citas próximas del usuario en tiempo real
         viewModelScope.launch {
             // Observa las citas del usuario
             if (userId != null) {
@@ -55,7 +57,7 @@ class AppointmentViewModel(
         }
     }
 
-    private fun loadDoctors() {
+    private fun loadDoctors() { // Carga la lista de doctores con sus horarios disponibles desde la BD
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
@@ -66,7 +68,7 @@ class AppointmentViewModel(
                         isLoading = false
                     )
                 }
-            } catch (e: Exception) {
+            } catch (e: Exception) { // Si hay error, desactiva carga y muestra mensaje de error
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -77,11 +79,11 @@ class AppointmentViewModel(
         }
     }
 
-    fun selectPet(pet: PetsEntity) {
+    fun selectPet(pet: PetsEntity) { // Actualiza la mascota seleccionada por el usuario
         _uiState.update { it.copy(selectedPet = pet) }
     }
 
-    fun selectDate(date: LocalDate) {
+    fun selectDate(date: LocalDate) { // Actualiza la fecha seleccionada y reinicia hora y horarios disponibles
         _uiState.update {
             it.copy(
                 selectedDate = date,
@@ -89,14 +91,14 @@ class AppointmentViewModel(
                 availableTimes = emptyList()
             )
         }
-        _uiState.value.selectedDoctor?.let { loadAvailableTimesForDoctor(date, it) }
+        _uiState.value.selectedDoctor?.let { loadAvailableTimesForDoctor(date, it) }  // Si ya hay un doctor seleccionado, carga los horarios para esa fecha
     }
 
-    fun selectTime(time: String) {
+    fun selectTime(time: String) { // Actualiza la hora seleccionada por el usuario
         _uiState.update { it.copy(selectedTime = time) }
     }
 
-    fun selectDoctor(doctor: DoctorWithSchedules) {
+    fun selectDoctor(doctor: DoctorWithSchedules) { // Actualiza el doctor seleccionado y recarga horarios si ya hay fecha
         _uiState.update {
             it.copy(
                 selectedDoctor = doctor,
@@ -107,13 +109,13 @@ class AppointmentViewModel(
         _uiState.value.selectedDate?.let { loadAvailableTimesForDoctor(it, doctor) }
     }
 
-    fun nextMonth() {
+    fun nextMonth() { // Avanza al siguiente mes en el calendario
         _uiState.update {
             it.copy(currentMonth = it.currentMonth.plusMonths(1))
         }
     }
 
-    fun previousMonth() {
+    fun previousMonth() {     // Retrocede al mes anterior, pero no permite ir a meses pasados
         val newMonth = _uiState.value.currentMonth.minusMonths(1)
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val currentYearMonth = today.toYearMonth()
@@ -124,7 +126,7 @@ class AppointmentViewModel(
         }
     }
 
-    private fun loadAvailableTimesForDoctor(date: LocalDate, doctor: DoctorWithSchedules) {
+    private fun loadAvailableTimesForDoctor(date: LocalDate, doctor: DoctorWithSchedules) {     // Carga los horarios disponibles de un doctor específico para una fecha dada
         val dayOfWeek = getDayOfWeekInSpanish(date)
         val schedule = doctor.schedules.find { it.dayOfWeek == dayOfWeek }
 
@@ -137,6 +139,7 @@ class AppointmentViewModel(
         _uiState.update { it.copy(availableTimes = times) }
     }
 
+    // Genera slots de tiempo cada 30 minutos entre hora de inicio y fin
     private fun generateTimeSlots(startTime: String, endTime: String, date: LocalDate): List<String> {
         val slots = mutableListOf<String>()
         val start = startTime.split(":").map { it.toInt() }
@@ -169,6 +172,7 @@ class AppointmentViewModel(
         return slots
     }
 
+    // Convierte el día de la semana de LocalDate a String en español
     private fun getDayOfWeekInSpanish(date: LocalDate): String {
         return when (date.dayOfWeek) {
             kotlinx.datetime.DayOfWeek.MONDAY -> "Lunes"
@@ -180,6 +184,8 @@ class AppointmentViewModel(
             kotlinx.datetime.DayOfWeek.SUNDAY -> "Domingo"
         }
     }
+
+    // Función principal para agendar una cita con todas las validaciones
 
     fun scheduleAppointment(notes: String? = null) {
         val state = _uiState.value
@@ -265,6 +271,7 @@ class AppointmentViewModel(
     }
 
 }
+/* Data class que representa estado de la ui appointments*/
 
 data class AppointmentUiState(
     val scheduledAppointments : List<AppointmentWithDetails> = emptyList(),
@@ -294,7 +301,12 @@ data class AppointmentUiState(
         get() = userPets.isEmpty()
 }
 
+// Función de extensión para convertir LocalDate a YearMonth personalizado
+
 fun LocalDate.toYearMonth(): YearMonth = YearMonth(year, monthNumber)
+
+
+// Data class personalizada para manejar año y mes (similar a java.time.YearMonth)
 
 data class YearMonth(val year: Int, val month: Int) {
     fun lengthOfMonth(): Int = LocalDate(year, month, 1)
@@ -307,6 +319,8 @@ data class YearMonth(val year: Int, val month: Int) {
         val totalMonths = year * 12 + month - 1 + n
         return YearMonth(totalMonths / 12, totalMonths % 12 + 1)
     }
+
+    // Resta n meses (reutiliza plusMonths con valor negativo)
 
     fun minusMonths(n: Int) = plusMonths(-n)
 }

@@ -60,25 +60,18 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    //librerias nuevas
-    implementation("androidx.navigation:navigation-compose:2.9.5")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
-    implementation("androidx.compose.material:material-icons-extended")
-
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-
-    ksp("androidx.room:room-compiler:2.6.1")
-    //Fechas para el calendario
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-
-    //cargar imagenes con compose
-    implementation("io.coil-kt:coil-compose:2.7.0")
-
-    //Data Storage
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    //librerias nuevas añadidas
+    implementation("androidx.navigation:navigation-compose:2.9.5") //Permite navegar entre pantallas en Jetpack Compose de forma declarativa (usando rutas y NavController).
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4") // Proporciona extensiones de Kotlin para ViewModels (como viewModelScope para corrutinas)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4") // Integra ViewModels con Compose (función viewModel() para obtener/crear ViewModels
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4") // Permite observar estados del ciclo de vida en Composables (como collectAsStateWithLifecycle())
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")// Soporte de corrutinas para Android, incluyendo Dispatchers.Main para operaciones en el hilo principa
+    implementation("androidx.compose.material:material-icons-extended")// Acceso a todos los iconos de Material Design (más allá de los básicos incluidos por defecto)
+    implementation("androidx.room:room-runtime:2.6.1")// Motor de ejecución de Room (base de datos SQLite con ORM).
+    implementation("androidx.room:room-ktx:2.6.1")// Extensiones de Kotlin para Room que permiten usar suspend functions y Flow en las consultas DAO
+    ksp("androidx.room:room-compiler:2.6.1")//Fechas para el calendario
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")//
+    implementation("io.coil-kt:coil-compose:2.7.0")//cargar imagenes con compose
+    implementation("androidx.datastore:datastore-preferences:1.1.1")//Data Storage
 }

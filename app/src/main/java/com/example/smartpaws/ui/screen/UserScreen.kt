@@ -65,7 +65,7 @@ import java.util.Date
 import java.util.Locale
 
 // Función para crear archivo temporal en cache/images/
-private fun createImageFile(context: Context): File? {
+private fun createImageFile(context: Context): File? { // Retorna el archivo creado o null si hay algun error
     return try {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val imagesDir = File(context.cacheDir, "images")
@@ -85,21 +85,21 @@ private fun getImageUriForFile(context: Context, file: File): Uri {
 
 @Composable
 fun UserScreen(
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel //parametro que se conecta con viewmodel y su logica
 ) {
     val context = LocalContext.current
-    val userProfile by authViewModel.userProfile.collectAsState()
+    val userProfile by authViewModel.userProfile.collectAsState() //variable que nos trae los datos del viewmodel a medida que cambian
 
-    var showImageDialog by remember { mutableStateOf(false) }
-    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
-    var lastImagePath by remember { mutableStateOf<String?>(null) }
-    val imagePath = userProfile?.profileImagePath
+    var showImageDialog by remember { mutableStateOf(false) }  // Estado para mostrar/ocultar el diálogo de selección de imagen
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) } // Uri temporal para la captura de la cámara
+    var lastImagePath by remember { mutableStateOf<String?>(null) } // Ruta del último archivo de imagen creado
+    val imagePath = userProfile?.profileImagePath // Obtiene la ruta de la imagen de perfil del usuario
 
 
-    //Launcher para la cámara (debe estar ANTES de usarse)
+    //Launcher para la cámara (debe estar ANTES de usarse) se ejecuta despues que tomamos una foto
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
-    ) { success ->
+    ) { success ->         // Si la foto fue tomada exitosamente, actualiza la imagen de perfil
         if (success && lastImagePath != null) {
             authViewModel.updateProfileImage(lastImagePath!!)
             Toast.makeText(context, "Foto actualizada", Toast.LENGTH_SHORT).show()
@@ -113,6 +113,7 @@ fun UserScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
+            // Si el permiso fue otorgado, crea el archivo y abre la cámara
             val file = createImageFile(context)
             if (file != null) {
                 lastImagePath = file.absolutePath
@@ -123,6 +124,7 @@ fun UserScreen(
                 Toast.makeText(context, "Error al crear archivo", Toast.LENGTH_SHORT).show()
             }
         } else {
+            // Si el permiso fue denegado, muestra un mensaje
             Toast.makeText(
                 context,
                 "Se necesita permiso de cámara para tomar fotos",
@@ -131,10 +133,11 @@ fun UserScreen(
         }
     }
 
-    // Launcher para la galería
+    // Launcher para la galería pd -> no requiere permisos especiales
     val pickGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
+        // Si se seleccionó una imagen, actualiza el perfil
         if (uri != null) {
             authViewModel.updateProfileImage(uri.toString())
             Toast.makeText(context, "Imagen actualizada", Toast.LENGTH_SHORT).show()
@@ -145,12 +148,12 @@ fun UserScreen(
     val cardColor = LightSecondary
     val textColor = DarkGreen
 
-    Box(
+    Box(    // Contenedor principal
         modifier = Modifier
             .fillMaxSize()
             .background(bg)
     ) {
-        if (userProfile == null) {
+        if (userProfile == null) {        // Muestra un indicador de carga si aún no se ha cargado el perfil
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color(0xFF4CA771)
@@ -197,10 +200,11 @@ fun UserScreen(
                             )
                         } else if (imagePath != null) {
                             // Es una URI de archivo o galería del propio usuario
+                            //Usa AsyncImage de Coil para cargar imágenes desde Uri
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
                                     .data(Uri.parse(imagePath))
-                                    .crossfade(true)
+                                    .crossfade(true) // Transición suave al cargar
                                     .build(),
                                 contentDescription = "Foto de perfil",
                                 modifier = Modifier
@@ -208,7 +212,7 @@ fun UserScreen(
                                     .clip(CircleShape)
                                     .border(3.dp, textColor, CircleShape),
                                 contentScale = ContentScale.Crop,
-                                error = painterResource(R.drawable.larry)
+                                error = painterResource(R.drawable.larry) // Imagen de respaldo en caso de error
                             )
                         } else {
                             // Y si no encuentra una imagen en el perfil le muestra larry el gato
@@ -224,7 +228,7 @@ fun UserScreen(
                         }
                     }
 
-                    // Botón de cámara flotante
+                    // Botón de cámara flotante que aparaece al lado del perfil
                     Surface(
                         modifier = Modifier
                             .size(36.dp)
@@ -244,7 +248,7 @@ fun UserScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Tarjeta con información
+                // Tarjeta con información del usuario
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -288,18 +292,18 @@ fun UserScreen(
         }
     }
 
-    // Diálogo para elegir cámara o galería
+    // Diálogo para elegir camara o galería
     if (showImageDialog) {
         AlertDialog(
             onDismissRequest = { showImageDialog = false },
             title = { Text("Cambiar foto de perfil") },
             text = { Text("¿Como quieres seleccionar la imagen?") },
             confirmButton = {
+                // Botón para abrir la cámara
                 TextButton(onClick = {
                     showImageDialog = false
-                    // VERIFICAR permiso antes de abrir csmara
                     when {
-                        ContextCompat.checkSelfPermission(
+                        ContextCompat.checkSelfPermission(  // VERIFICAR permiso antes de abrir csmara
                             context,
                             Manifest.permission.CAMERA
                         ) == PackageManager.PERMISSION_GRANTED -> {
@@ -337,7 +341,7 @@ fun UserScreen(
 }
 
 @Composable
-fun InfoRow(
+fun InfoRow( // Composable reutilizable para mostrar una fila de informacion su etiqueta y  el valor
     label: String,
     value: String
 ) {
