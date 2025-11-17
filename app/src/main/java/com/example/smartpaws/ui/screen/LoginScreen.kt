@@ -1,5 +1,6 @@
 package com.example.smartpaws.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,8 +62,12 @@ fun LoginScreenVm(
     onGoRegister: () -> Unit
 ) {
     val state by vm.login.collectAsStateWithLifecycle()
+    val userProfile by vm.userProfile.collectAsState()
+
+    val  context  = LocalContext.current
 
     if (state.success) {
+        Toast.makeText(context, "Bienvenido ${userProfile?.name ?: ""}!", Toast.LENGTH_LONG).show()
         vm.clearLoginResult()
         onLoginOkNavigateHome()
     }
@@ -76,7 +83,7 @@ fun LoginScreenVm(
         onEmailChange = vm::onLoginEmailChange,
         onPassChange = vm::onLoginPassChange,
         onSubmit = vm::submitLogin,
-        onGoRegister = onGoRegister
+        onGoRegister = onGoRegister,
     )
 }
 
@@ -93,11 +100,10 @@ private fun LoginScreen(
     onEmailChange: (String) -> Unit, // el onemail y password son callbacks cuando se cambian
     onPassChange: (String) -> Unit,
     onSubmit: () -> Unit, //Submit y registro son callback
-    onGoRegister: () -> Unit
+    onGoRegister: () -> Unit,
 ) {
     val bg = DarkGreen
     var showPass by remember { mutableStateOf(false) }
-
     // Box que ocupa TODA la pantalla, sin padding
     Box(
         modifier = Modifier
@@ -232,7 +238,7 @@ private fun LoginScreen(
 
             // Botón Entrar
             Button(
-                onClick = onSubmit,
+                onClick = { onSubmit() },
                 enabled = canSubmit && !isSubmitting, // Solo habilitado si puede enviar y no está procesando
                 modifier = Modifier
                     .fillMaxWidth()
@@ -298,5 +304,4 @@ private fun LoginScreen(
         }
     }
 }
-
 
