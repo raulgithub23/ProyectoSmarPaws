@@ -1,4 +1,3 @@
-
 package com.example.smartpaws.data.repository
 
 import com.example.smartpaws.data.local.appointment.AppointmentDao
@@ -18,6 +17,11 @@ class AppointmentRepository(
     //Flow para próximas 3 citas de un usuario
     fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
         return appointmentDao.getUpcomingAppointmentsByUser(userId)
+    }
+
+    // Obtener citas existentes para un doctor en una fecha
+    suspend fun getAppointmentsByDoctorAndDate(doctorId: Long, date: String): List<AppointmentEntity> {
+        return appointmentDao.getAppointmentsByDoctorAndDate(doctorId, date)
     }
 
     // Obtener detalle con Result<T>

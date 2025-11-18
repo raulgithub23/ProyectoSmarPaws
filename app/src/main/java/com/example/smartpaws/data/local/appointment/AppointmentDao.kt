@@ -63,6 +63,9 @@ interface AppointmentDao {
     """)
     fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>>
 
+    @Query("SELECT * FROM appointments WHERE doctorId = :doctorId AND date = :date")
+    suspend fun getAppointmentsByDoctorAndDate(doctorId: Long, date: String): List<AppointmentEntity>
+
     // Obtener detalle de una cita específica
     @Query("""
         SELECT a.*, p.name as petName, d.name as doctorName, d.specialty as doctorSpecialty

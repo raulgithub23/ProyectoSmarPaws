@@ -126,7 +126,8 @@ class AppointmentViewModel(
         }
     }
 
-    private fun loadAvailableTimesForDoctor(date: LocalDate, doctor: DoctorWithSchedules) {     // Carga los horarios disponibles de un doctor específico para una fecha dada
+    // Carga los horarios disponibles de un doctor específico para una fecha dada
+    private fun loadAvailableTimesForDoctor(date: LocalDate, doctor: DoctorWithSchedules) {
         val dayOfWeek = getDayOfWeekInSpanish(date)
         val schedule = doctor.schedules.find { it.dayOfWeek == dayOfWeek }
 
@@ -135,8 +136,24 @@ class AppointmentViewModel(
             return
         }
 
-        val times = generateTimeSlots(schedule.startTime, schedule.endTime, date)
-        _uiState.update { it.copy(availableTimes = times) }
+        // corrutina para filtrar los horarios ocupados
+        viewModelScope.launch {
+            // todos los slots posibles
+            val allSlots = generateTimeSlots(schedule.startTime, schedule.endTime, date)
+
+            // Obtenemos las citas que YA existen para ese doctor en esa fecha
+            val occupiedTimes = try {
+                val existingAppointments = repository.getAppointmentsByDoctorAndDate(doctor.doctor.id, date.toString())
+                existingAppointments.map { it.time }
+            } catch (e: Exception) {
+                emptyList<String>()
+            }
+
+            // 3. Filtramos: Dejamos solo los slots que NO están en occupiedTimes
+            val availableSlots = allSlots.filter { it !in occupiedTimes }
+
+            _uiState.update { it.copy(availableTimes = availableSlots) }
+        }
     }
 
     // Genera slots de tiempo cada 30 minutos entre hora de inicio y fin
@@ -202,6 +219,29 @@ class AppointmentViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMsg = null) }
+
+            // verificar horario sigue disponible
+            val isTimeTaken = try {
+                val existing = repository.getAppointmentsByDoctorAndDate(
+                    state.selectedDoctor.doctor.id,
+                    state.selectedDate.toString()
+                )
+                existing.any { it.time == state.selectedTime }
+            } catch (e: Exception) {
+                false
+            }
+
+            if (isTimeTaken) {
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMsg = "Lo sentimos, este horario acaba de ser ocupado."
+                    )
+                }
+                // Recargamos los horarios para que la UI se actualice
+                loadAvailableTimesForDoctor(state.selectedDate, state.selectedDoctor)
+                return@launch
+            }
 
             val result = repository.createAppointment(
                 userId = state.selectedPet.userId,
