@@ -39,12 +39,15 @@ import com.example.smartpaws.ui.screen.LoginScreenVm
 import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
 import com.example.smartpaws.ui.screen.AdminPanelScreen
+import com.example.smartpaws.ui.screen.DoctorAppointmentsScreen
 import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import com.example.smartpaws.viewmodel.HomeViewModel
+import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModel
+import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModelFactory
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -67,19 +70,16 @@ fun AppNavGraph(
         startDestination = startDestination,
         modifier = Modifier.fillMaxSize()
     ) {
-        // PANTALLAS DE AUTENTICACIÓN (sin Scaffold)
+        // ... (Login y Register iguales) ...
         composable(Route.Login.path) {
             LoginScreenVm(
                 vm = authViewModel,
                 onLoginOkNavigateHome = {
-                    // Navega a Home y limpia el back stack para que no pueda volver al login
                     navController.navigate(Route.Home.path) {
                         popUpTo(Route.Login.path) { inclusive = true }
                     }
                 },
-                onGoRegister = {
-                    navController.navigate(Route.Register.path)
-                }
+                onGoRegister = { navController.navigate(Route.Register.path) }
             )
         }
 
@@ -91,14 +91,10 @@ fun AppNavGraph(
                         popUpTo(Route.Register.path) { inclusive = true }
                     }
                 },
-                onGoLogin = {
-                    navController.popBackStack() // Vuelve al login
-                }
+                onGoLogin = { navController.popBackStack() }
             )
         }
 
-        // PANTALLAS PRINCIPALES (con Scaffold completo)
-        // todas las pantallas autenticadas en un Scaffold compartido
         composable(Route.Home.path) {
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 HomeScreen(viewModel = homeViewModel)
@@ -107,28 +103,20 @@ fun AppNavGraph(
 
         composable(Route.Pets.path) {
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
-                PetsScreen(
-                    petsViewModel = petsViewModel,
-                    authViewModel = authViewModel
-                )
+                PetsScreen(petsViewModel = petsViewModel, authViewModel = authViewModel)
             }
         }
 
         composable(Route.History.path) {
-            val historyViewModel: HistoryViewModel = viewModel(
-                factory = historyViewModelFactory
-            )
+            val historyViewModel: HistoryViewModel = viewModel(factory = historyViewModelFactory)
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 HistoryScreen(viewModel = historyViewModel)
             }
         }
 
-        // RUTA ALTERNATIVA: Appointment sin petId específico
-        // Si el usuario va directamente desde el bottom bar sin seleccionar mascota
         composable(Route.Appointment.path) {
             val loginState by authViewModel.login.collectAsState()
             val userId = loginState.userId ?: 1L
-
             val appointmentViewModel: AppointmentViewModel = viewModel(
                 factory = AppointmentViewModelFactory(
                     appointmentRepository = appointmentRepository,
@@ -138,15 +126,11 @@ fun AppNavGraph(
                 ),
                 key = "appointment_$userId"
             )
-
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 AppointmentScreen(
                     viewModel = appointmentViewModel,
                     onAppointmentCreated = {
-                        // PARA REDIRIGIR EN CASO QUE SE NECESITE (para home u otra)
-                        navController.navigate(Route.Appointment.path) {
-                            popUpTo(Route.Home.path)
-                        }
+                        navController.navigate(Route.Appointment.path) { popUpTo(Route.Home.path) }
                     }
                 )
             }
@@ -163,6 +147,29 @@ fun AppNavGraph(
                 AdminPanelScreen(viewModel = adminViewModel)
             }
         }
+
+        // --- NUEVA PANTALLA ---
+        composable(Route.DoctorAppointments.path) {
+            val loginState by authViewModel.login.collectAsState()
+            val userProfile by authViewModel.userProfile.collectAsState()
+
+            // Solo cargamos si hay usuario, si no, manejo de error o login
+            val userId = loginState.userId ?: 0L
+            val userEmail = userProfile?.email ?: ""
+
+            val doctorVM: DoctorAppointmentsViewModel = viewModel(
+                factory = DoctorAppointmentsViewModelFactory(
+                    appointmentRepository = appointmentRepository,
+                    doctorRepository = doctorRepository,
+                    userId = userId,
+                    userEmail = userEmail
+                )
+            )
+
+            MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
+                DoctorAppointmentsScreen(viewModel = doctorVM)
+            }
+        }
     }
 }
 
@@ -175,57 +182,28 @@ private fun MainScaffoldWrapper(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    // la ruta actual para el bottom navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    // Helpers de navegación
-    val goHome: () -> Unit = {
-        navController.navigate(Route.Home.path) {
-            popUpTo(Route.Home.path) { inclusive = true }
-        }
-    }
-    val goPets: () -> Unit = {
-        navController.navigate(Route.Pets.path) {
-            popUpTo(Route.Home.path)
-        }
-    }
-    val goHistory: () -> Unit = {
-        navController.navigate(Route.History.path) {
-            popUpTo(Route.Home.path)
-        }
-    }
-    val goAppointment: () -> Unit = {
-        // Navega a appointment sin petId específico
-        navController.navigate(Route.Appointment.path) {
-            popUpTo(Route.Home.path)
-        }
-    }
-    val goUser: () -> Unit = {
-        navController.navigate(Route.User.path) {
-            popUpTo(Route.Home.path)
-        }
-    }
-    val goLogin: () -> Unit = {
-        navController.navigate(Route.Login.path) {
-            popUpTo(0) { inclusive = true }
-        }
-    }
 
-    val goAdminPanel: () -> Unit = {
-        navController.navigate(Route.AdminPanel.path) {
-            popUpTo(Route.Home.path)
-        }
-    }
+    val goHome = { navController.navigate(Route.Home.path) { popUpTo(Route.Home.path) { inclusive = true } } }
+    val goPets = { navController.navigate(Route.Pets.path) { popUpTo(Route.Home.path) } }
+    val goHistory = { navController.navigate(Route.History.path) { popUpTo(Route.Home.path) } }
+    val goAppointment = { navController.navigate(Route.Appointment.path) { popUpTo(Route.Home.path) } }
+    val goUser = { navController.navigate(Route.User.path) { popUpTo(Route.Home.path) } }
+    val goLogin = { navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } } }
+    val goAdminPanel = { navController.navigate(Route.AdminPanel.path) { popUpTo(Route.Home.path) } }
 
-    val onLogout: () -> Unit = {
-        authViewModel.logout()
-        goLogin()
-    }
+    // Nueva navegación
+    val goDoctorAppointments = { navController.navigate(Route.DoctorAppointments.path) { popUpTo(Route.Home.path) } }
+
+    val onLogout = { authViewModel.logout(); goLogin() }
 
     val userProfile by authViewModel.userProfile.collectAsState()
     val isAdmin = userProfile?.rol == "ADMIN"
+    // Asumimos que si el rol es DOCTOR, puede ver esto.
+    // O si usamos el ADMIN como comodín. Ajusta esto según tu lógica de roles
+    val isDoctor = userProfile?.rol == "DOCTOR" || isAdmin
 
-    // Para saber el tamaño de la pantalla actual si es compata o mas grande
     val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
 
     ModalNavigationDrawer(
@@ -234,23 +212,14 @@ private fun MainScaffoldWrapper(
             AppDrawer(
                 currentRoute = currentRoute,
                 items = defaultDrawerItems(
-                    onHome = {
-                        scope.launch { drawerState.close() }
-                        goHome()
-                    },
-                    onUser = {
-                        scope.launch { drawerState.close() }
-                        goUser()
-                    },
+                    onHome = { scope.launch { drawerState.close() }; goHome() },
+                    onUser = { scope.launch { drawerState.close() }; goUser() },
                     isAdmin = isAdmin,
-                    onAdminPanel = {
-                        scope.launch { drawerState.close() }
-                        goAdminPanel()
-                    },
-                    onLogout = {
-                        scope.launch { drawerState.close() }
-                        onLogout()
-                    }
+                    onAdminPanel = { scope.launch { drawerState.close() }; goAdminPanel() },
+                    // Pasamos la info del doctor
+                    isDoctor = isDoctor,
+                    onDoctorAppointments = { scope.launch { drawerState.close() }; goDoctorAppointments() },
+                    onLogout = { scope.launch { drawerState.close() }; onLogout() }
                 )
             )
         }

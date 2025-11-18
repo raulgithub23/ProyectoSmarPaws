@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.DateRange // Import necesario para el icono de citas
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -58,6 +59,8 @@ fun defaultDrawerItems(
     onUser: () -> Unit, //ACCION DEL PERFIL
     isAdmin: Boolean,
     onAdminPanel: () -> Unit,
+    isDoctor: Boolean = false, // NUEVO: Saber si es doctor
+    onDoctorAppointments: () -> Unit = {}, // NUEVO: Acción para ir a citas agendadas
     onLogout: () -> Unit
 ): List<DrawerItem> {
     // Usamos una lista mutable para construirla dinámicamente
@@ -73,6 +76,17 @@ fun defaultDrawerItems(
                 "Panel de Administración ",
                 Icons.Filled.AdminPanelSettings,
                 onAdminPanel
+            )
+        )
+    }
+
+    // LÓGICA CONDICIONAL PARA MOSTRAR LA OPCION DE DOCTOR
+    if (isDoctor) {
+        items.add(
+            DrawerItem(
+                "Citas Agendadas",
+                Icons.Filled.DateRange,
+                onDoctorAppointments
             )
         )
     }

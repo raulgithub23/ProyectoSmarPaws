@@ -12,6 +12,8 @@ sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object User : Route("user") //RUTA PARA VER EL PERFIL
 
     data object AdminPanel : Route("admin_panel")
+
+    data object DoctorAppointments : Route("doctor_appointments")
 }
 
 /*

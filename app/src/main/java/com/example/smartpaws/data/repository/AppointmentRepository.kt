@@ -3,6 +3,7 @@ package com.example.smartpaws.data.repository
 import com.example.smartpaws.data.local.appointment.AppointmentDao
 import com.example.smartpaws.data.local.appointment.AppointmentEntity
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
+import com.example.smartpaws.data.local.doctors.DoctorAppointmentSummary
 import kotlinx.coroutines.flow.Flow
 
 class AppointmentRepository(
@@ -14,17 +15,14 @@ class AppointmentRepository(
         return appointmentDao.getAppointmentsByUser(userId)
     }
 
-    //Flow para próximas 3 citas de un usuario
     fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
         return appointmentDao.getUpcomingAppointmentsByUser(userId)
     }
 
-    // Obtener citas existentes para un doctor en una fecha
     suspend fun getAppointmentsByDoctorAndDate(doctorId: Long, date: String): List<AppointmentEntity> {
         return appointmentDao.getAppointmentsByDoctorAndDate(doctorId, date)
     }
 
-    // Obtener detalle con Result<T>
     suspend fun getAppointmentDetail(appointmentId: Long): Result<AppointmentWithDetails> {
         return try {
             val appointment = appointmentDao.getAppointmentById(appointmentId)
@@ -38,7 +36,6 @@ class AppointmentRepository(
         }
     }
 
-    // Crear cita como el register del profe
     suspend fun createAppointment(
         userId: Long?,
         petId: Long,
@@ -71,5 +68,9 @@ class AppointmentRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    fun getAppointmentsForDoctor(doctorId: Long): Flow<List<DoctorAppointmentSummary>> {
+        return appointmentDao.getAppointmentsByDoctor(doctorId)
     }
 }

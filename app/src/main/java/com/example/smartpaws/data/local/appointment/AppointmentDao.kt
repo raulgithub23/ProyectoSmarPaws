@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import kotlinx.coroutines.flow.Flow
+import com.example.smartpaws.data.local.doctors.DoctorAppointmentSummary
 
 
 /*
@@ -81,4 +82,17 @@ interface AppointmentDao {
 
     @Query("DELETE FROM appointments WHERE id = :appointmentId")
     suspend fun deleteById(appointmentId: Long)
+
+    @Query("""
+        SELECT 
+            a.id, a.date, a.time, a.notes,
+            p.name as petName, p.especie as petEspecie,
+            u.name as ownerName, u.phone as ownerPhone
+        FROM appointments a
+        INNER JOIN pets p ON a.petId = p.id
+        INNER JOIN users u ON a.userId = u.id
+        WHERE a.doctorId = :doctorId
+        ORDER BY a.date ASC, a.time ASC
+    """)
+    fun getAppointmentsByDoctor(doctorId: Long): Flow<List<DoctorAppointmentSummary>>
 }
