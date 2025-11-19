@@ -191,6 +191,25 @@ class AuthViewModel(
             }
         }
     }
+
+    fun updateUserProfile(name: String, phone: String) {
+        viewModelScope.launch {
+            try {
+                val currentUser = _userProfile.value
+                if (currentUser != null) {
+                    val updatedUser = currentUser.copy(
+                        name = name,
+                        phone = phone
+                    )
+                    repository.updateUser(updatedUser)
+                    _userProfile.value = updatedUser
+                }
+            } catch (e: Exception) {
+                // Manejar error si es necesario
+                e.printStackTrace()
+            }
+        }
+    }
     fun clearLoginResult() {                                // Limpia banderas tras navegar
         _login.update { it.copy(success = false, errorMsg = null) }
     }

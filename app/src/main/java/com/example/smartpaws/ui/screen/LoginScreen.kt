@@ -76,41 +76,40 @@ fun LoginScreenVm(
         onEmailChange = vm::onLoginEmailChange,
         onPassChange = vm::onLoginPassChange,
         onSubmit = vm::submitLogin,
-        onGoRegister = onGoRegister
+        onGoRegister = onGoRegister,
     )
 }
 
 @Composable
 private fun LoginScreen(
     modifier: Modifier = Modifier,
-    email: String, //correo y contra se toma el valor actual
+    email: String,
     pass: String,
-    emailError: String?, //correo y contra errorms, indica sy hay error y null si no hay error
+    emailError: String?,
     passError: String?,
-    canSubmit: Boolean,  //nos dice si podemso enviar el formulario
+    canSubmit: Boolean,
     isSubmitting: Boolean,
     errorMsg: String?,
-    onEmailChange: (String) -> Unit, // el onemail y password son callbacks cuando se cambian
+    onEmailChange: (String) -> Unit,
     onPassChange: (String) -> Unit,
-    onSubmit: () -> Unit, //Submit y registro son callback
-    onGoRegister: () -> Unit
+    onSubmit: () -> Unit,
+    onGoRegister: () -> Unit,
 ) {
     val bg = DarkGreen
     var showPass by remember { mutableStateOf(false) }
 
-    // Box que ocupa TODA la pantalla, sin padding
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(bg)
-            .systemBarsPadding(), // Solo respeta las barras del sistema (status bar, navigation bar)
+            .systemBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp) // Solo padding horizontal para márgenes laterales
-                .verticalScroll(rememberScrollState()), // Permite scroll si el teclado aparece
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -159,9 +158,9 @@ private fun LoginScreen(
                 value = email,
                 onValueChange = onEmailChange,
                 label = { Text("Email", color = Color.White.copy(alpha = 0.8f)) },
-                singleLine = true, // Solo permite una línea de texto
-                isError = emailError != null, // Muestra estilo de error si hay mensaje de error
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), // Teclado optimizado para email
+                singleLine = true,
+                isError = emailError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
@@ -170,10 +169,13 @@ private fun LoginScreen(
                     unfocusedBorderColor = Color.White.copy(alpha = 0.6f),
                     cursorColor = Color.White,
                     errorBorderColor = Color(0xFFFFCDD2),
-                    errorCursorColor = Color(0xFFFFCDD2)
+                    errorCursorColor = Color(0xFFFFCDD2),
+                    errorTextColor = Color.White,
+                    focusedLabelColor = Color.White.copy(alpha = 0.8f),
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                    errorLabelColor = Color(0xFFFFCDD2)
                 )
             )
-            // Muestra el mensaje de error del email si existe si no retorna un null
             if (emailError != null) {
                 Text(
                     text = emailError,
@@ -193,8 +195,7 @@ private fun LoginScreen(
                 onValueChange = onPassChange,
                 label = { Text("Contraseña", color = Color.White.copy(alpha = 0.8f)) },
                 singleLine = true,
-                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(), // Transforma el texto en puntos si showPass es false
-                // Icono para mostrar/ocultar contraseña
+                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { showPass = !showPass }) {
                         Icon(
@@ -213,10 +214,13 @@ private fun LoginScreen(
                     unfocusedBorderColor = Color.White.copy(alpha = 0.6f),
                     cursorColor = Color.White,
                     errorBorderColor = Color(0xFFFFCDD2),
-                    errorCursorColor = Color(0xFFFFCDD2)
+                    errorCursorColor = Color(0xFFFFCDD2),
+                    errorTextColor = Color.White,
+                    focusedLabelColor = Color.White.copy(alpha = 0.8f),
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                    errorLabelColor = Color(0xFFFFCDD2)
                 )
             )
-            // Muestra el mensaje de error de la contraseña si existe si no retonar un nulo
             if (passError != null) {
                 Text(
                     text = passError,
@@ -232,8 +236,8 @@ private fun LoginScreen(
 
             // Botón Entrar
             Button(
-                onClick = onSubmit,
-                enabled = canSubmit && !isSubmitting, // Solo habilitado si puede enviar y no está procesando
+                onClick = { onSubmit() },
+                enabled = canSubmit && !isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -245,7 +249,6 @@ private fun LoginScreen(
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                // nos muestra un indicador de carga mientras se está enviando
                 if (isSubmitting) {
                     CircularProgressIndicator(
                         strokeWidth = 2.dp,
@@ -298,5 +301,3 @@ private fun LoginScreen(
         }
     }
 }
-
-
