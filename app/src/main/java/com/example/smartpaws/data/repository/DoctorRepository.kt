@@ -1,41 +1,99 @@
 package com.example.smartpaws.data.repository
 
-import com.example.smartpaws.data.local.doctors.DoctorDao
+import android.util.Log
 import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import com.example.smartpaws.data.remote.DoctorApiService
+import com.example.smartpaws.data.remote.RemoteModule
+import com.example.smartpaws.data.remote.dto.CreateDoctorRequest
+import com.example.smartpaws.data.remote.dto.ScheduleDto
+import com.example.smartpaws.data.remote.dto.UpdateSchedulesRequest
 
-class DoctorRepository(
-    private val doctorDao: DoctorDao
-) {
+class DoctorRepository {
 
-    // Obtener todos los doctores con sus horarios
+    private val api: DoctorApiService = RemoteModule.createDoctorService(DoctorApiService::class.java)
+
     suspend fun getAllDoctorsWithSchedules(): List<DoctorWithSchedules> {
         return try {
-            val doctors = doctorDao.getAllDoctorsWithSchedules()
-            android.util.Log.d("DoctorRepository", "Doctores obtenidos: ${doctors.size}")
-            doctors
+            val doctorsDto = api.getAllDoctors()
+            doctorsDto.map { dto ->
+                val doctor = DoctorEntity(
+                    id = dto.id,
+                    name = dto.name,
+                    specialty = dto.specialty,
+                    email = dto.email,
+                    phone = dto.phone
+                )
+                val schedules = dto.schedules.map { scheduleDto ->
+                    DoctorScheduleEntity(
+                        id = scheduleDto.id ?: 0L,
+                        doctorId = dto.id,
+                        dayOfWeek = scheduleDto.dayOfWeek,
+                        startTime = scheduleDto.startTime,
+                        endTime = scheduleDto.endTime
+                    )
+                }
+                DoctorWithSchedules(doctor, schedules)
+            }
         } catch (e: Exception) {
-            android.util.Log.e("DoctorRepository", "Error obteniendo doctores", e)
+            Log.e("DoctorRepository", "Error obteniendo doctores", e)
             emptyList()
         }
     }
 
-    // Obtener un doctor específico con sus horarios
     suspend fun getDoctorWithSchedules(doctorId: Long): Result<DoctorWithSchedules> {
         return try {
-            val doctor = doctorDao.getDoctorWithSchedules(doctorId)
-            if (doctor != null) {
-                Result.success(doctor)
-            } else {
-                Result.failure(IllegalArgumentException("Doctor no encontrado"))
+            val dto = api.getDoctorById(doctorId)
+            val doctor = DoctorEntity(
+                id = dto.id,
+                name = dto.name,
+                specialty = dto.specialty,
+                email = dto.email,
+                phone = dto.phone
+            )
+            val schedules = dto.schedules.map { scheduleDto ->
+                DoctorScheduleEntity(
+                    id = scheduleDto.id ?: 0L,
+                    doctorId = dto.id,
+                    dayOfWeek = scheduleDto.dayOfWeek,
+                    startTime = scheduleDto.startTime,
+                    endTime = scheduleDto.endTime
+                )
             }
+            Result.success(DoctorWithSchedules(doctor, schedules))
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error obteniendo doctor por ID: $doctorId", e)
             Result.failure(e)
         }
     }
 
-    // Crear doctor con sus horarios
+    suspend fun getDoctorByEmail(email: String): Result<DoctorWithSchedules> {
+        return try {
+            val dto = api.getDoctorByEmail(email)
+            val doctor = DoctorEntity(
+                id = dto.id,
+                name = dto.name,
+                specialty = dto.specialty,
+                email = dto.email,
+                phone = dto.phone
+            )
+            val schedules = dto.schedules.map { scheduleDto ->
+                DoctorScheduleEntity(
+                    id = scheduleDto.id ?: 0L,
+                    doctorId = dto.id,
+                    dayOfWeek = scheduleDto.dayOfWeek,
+                    startTime = scheduleDto.startTime,
+                    endTime = scheduleDto.endTime
+                )
+            }
+            Result.success(DoctorWithSchedules(doctor, schedules))
+        } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error obteniendo doctor por email: $email", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun createDoctorWithSchedules(
         name: String,
         specialty: String,
@@ -44,50 +102,62 @@ class DoctorRepository(
         schedules: List<DoctorScheduleEntity>
     ): Result<Long> {
         return try {
-            val doctorId = doctorDao.insert(
-                DoctorEntity(
-                    name = name,
-                    specialty = specialty,
-                    email = email,
-                    phone = phone
+            val scheduleDtos = schedules.map {
+                ScheduleDto(
+                    id = null,
+                    dayOfWeek = it.dayOfWeek,
+                    startTime = it.startTime,
+                    endTime = it.endTime
                 )
-            )
-
-            // Insertar horarios asociados al doctor
-            val schedulesWithDoctorId = schedules.map { it.copy(doctorId = doctorId) }
-            doctorDao.insertSchedules(schedulesWithDoctorId)
-
-            Result.success(doctorId)
+            }
+            val request = CreateDoctorRequest(name, specialty, email, phone, scheduleDtos)
+            val response = api.createDoctor(request)
+            Log.d("DoctorRepository", "Doctor creado exitosamente con ID: ${response.id}")
+            Result.success(response.id)
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error creando doctor", e)
             Result.failure(e)
         }
     }
 
-    // Verificar si hay doctores
     suspend fun hasDoctors(): Boolean {
         return try {
-            doctorDao.count() > 0
+            val count = api.countDoctors()
+            Log.d("DoctorRepository", "Cantidad de doctores: $count")
+            count > 0
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error verificando existencia de doctores", e)
             false
         }
     }
 
-    // Actualizar los horarios de un doctor
     suspend fun updateSchedules(doctorId: Long, newSchedules: List<DoctorScheduleEntity>): Result<Unit> {
         return try {
-            doctorDao.updateSchedules(doctorId, newSchedules)
+            val scheduleDtos = newSchedules.map {
+                ScheduleDto(
+                    id = null, // El backend generará nuevos IDs
+                    dayOfWeek = it.dayOfWeek,
+                    startTime = it.startTime,
+                    endTime = it.endTime
+                )
+            }
+            val request = UpdateSchedulesRequest(scheduleDtos)
+            api.updateSchedules(doctorId, request)
+            Log.d("DoctorRepository", "Horarios actualizados para doctor ID: $doctorId")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error actualizando horarios del doctor $doctorId", e)
             Result.failure(e)
         }
     }
 
-    // Eliminar el perfil de un doctor
     suspend fun deleteDoctor(doctor: DoctorEntity): Result<Unit> {
         return try {
-            doctorDao.delete(doctor)
+            api.deleteDoctor(doctor.id)
+            Log.d("DoctorRepository", "Doctor eliminado: ${doctor.name} (ID: ${doctor.id})")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error eliminando doctor ${doctor.id}", e)
             Result.failure(e)
         }
     }

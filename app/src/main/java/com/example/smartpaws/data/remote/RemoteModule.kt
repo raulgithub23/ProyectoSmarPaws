@@ -8,21 +8,42 @@ import java.util.concurrent.TimeUnit
 
 object RemoteModule {
 
-    //AGREGAR LA URL DEL MICROSERVICIO DIRECTAMENTE A CADA REPOSITORIO CORRESPONDIENTE
+    private const val AUTH_BASE_URL = "https://94js12g4-8081.brs.devtunnels.ms/"
+    private const val DOCTOR_BASE_URL = "https://94js12g4-8082.brs.devtunnels.ms/"
+
+    private const val PETS_BASE_URL = "https://94js12g4-8083.brs.devtunnels.ms/"
+
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
     private val okHttp = OkHttpClient.Builder()
         .addInterceptor(logging)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    fun <T> createService(baseUrl: String, service: Class<T>): T {
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(okHttp)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(service)
-    }
+    private val authRetrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(AUTH_BASE_URL)
+        .client(okHttp)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    private val doctorRetrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(DOCTOR_BASE_URL)
+        .client(okHttp)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    private val petsRetrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(PETS_BASE_URL)
+        .client(okHttp)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    fun <T> createAuthService(service: Class<T>): T = authRetrofit.create(service)
+    fun <T> createDoctorService(service: Class<T>): T = doctorRetrofit.create(service)
+
+    fun <T> createPetsService(service: Class<T>): T = petsRetrofit.create(service)
 }

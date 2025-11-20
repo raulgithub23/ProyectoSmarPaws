@@ -9,7 +9,7 @@ import retrofit2.HttpException
 
 class PetsRepository(
     private val api: PetsApiService =
-        RemoteModule.createService("https://xd6w381w-8083.use2.devtunnels.ms/", PetsApiService::class.java)
+        RemoteModule.createPetsService(PetsApiService::class.java)
 ) {
 
     suspend fun insertPet(pet: PetsDto): Result<Long> = try {
