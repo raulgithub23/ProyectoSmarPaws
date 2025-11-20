@@ -125,13 +125,13 @@ class AuthViewModel(
             _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
             delay(500)
 
-            val result = repository.login(s.email.trim(), s.pass)
+            // se cambio la variables pass por la de password
+            val result = repository.login(s.email.trim(), s.pass)  // Esto está bien (el segundo parámetro es password)
 
             _login.update {
                 if (result.isSuccess) {
                     val user = result.getOrNull()
                     if (user != null) {
-                        // corrutina para no bloquear
                         viewModelScope.launch {
                             userPreferences.saveUserId(user.id)
                         }
@@ -168,6 +168,8 @@ class AuthViewModel(
                 _userProfile.value = user
             } catch (e: Exception) {
                 _userProfile.value = null
+                // Opcional: cerrar sesión si el usuario no existe
+                userPreferences.clearSession()
             }
         }
     }
@@ -282,25 +284,23 @@ class AuthViewModel(
         _register.update { it.copy(canSubmit = noErrors && filled) } // Actualizamos flag
     }
 
-    fun submitRegister() {                                  // Acción de registro (simulación async)
-        val s = _register.value                              // Snapshot del estado
-        if (!s.canSubmit || s.isSubmitting) return          // Evitamos reentradas
-        viewModelScope.launch {                             // Corrutina
-            _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Loading
-            delay(700)                                      // Simulamos IO
+    fun submitRegister() {
+        val s = _register.value
+        if (!s.canSubmit || s.isSubmitting) return
+        viewModelScope.launch {
+            _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
+            delay(700)
 
-            // 7.- Se cambia esto por lo anterior NUEVO: inserta en BD (con teléfono) vía repositorio
             val result = repository.register(
                 name = s.name.trim(),
                 email = s.email.trim(),
-                phone = s.phone.trim(),                     // Incluye teléfono
-                pass = s.pass
+                phone = s.phone.trim(),
+                password = s.pass  // Aca tambien se la vairable password
             )
 
-            // Interpreta resultado y actualiza estado
             _register.update {
                 if (result.isSuccess) {
-                    it.copy(isSubmitting = false, success = true, errorMsg = null)  // OK
+                    it.copy(isSubmitting = false, success = true, errorMsg = null)
                 } else {
                     it.copy(isSubmitting = false, success = false,
                         errorMsg = result.exceptionOrNull()?.message ?: "No se pudo registrar")

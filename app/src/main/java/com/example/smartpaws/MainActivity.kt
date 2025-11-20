@@ -90,7 +90,7 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
 
     val petsDao = db.petsDao()
 
-    val userRepository = UserRepository(userDao)
+    val userRepository = UserRepository()
     // ^ Repositorio que encapsula la lógica de login/registro contra Room.
 
     val appointmentRepository = AppointmentRepository(appointmentDao)

@@ -1,4 +1,4 @@
-package com.example.smartpaws.viewmodel // O tu paquete de ViewModel
+package com.example.smartpaws.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,15 +15,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AdminUiState(
-    // Pestaña de Usuarios
     val users: List<UserEntity> = emptyList(),
     val stats: AdminStats = AdminStats(),
     val searchQuery: String = "",
     val selectedRole: String? = null,
-
-    // Pestaña de Doctores
     val doctors: List<DoctorWithSchedules> = emptyList(),
-    // Estado general
     val isLoading: Boolean = false,
     val errorMsg: String? = null,
     val successMsg: String? = null
@@ -52,7 +48,6 @@ class AdminViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
             try {
-                // Cargar ambas listas en paralelo
                 val usersAsync = async { userRepository.getAllUsers() }
                 val doctorsAsync = async { doctorRepository.getAllDoctorsWithSchedules() }
 
@@ -195,11 +190,17 @@ class AdminViewModel(
             loadAllData()
         } else {
             viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
                 try {
                     val results = userRepository.searchUsers(query)
-                    _uiState.update { it.copy(users = results) }
+                    _uiState.update { it.copy(users = results, isLoading = false) }
                 } catch (e: Exception) {
-                    _uiState.update { it.copy(errorMsg = "Error en la búsqueda") }
+                    _uiState.update {
+                        it.copy(
+                            errorMsg = "Error en la búsqueda: ${e.message}",
+                            isLoading = false
+                        )
+                    }
                 }
             }
         }
@@ -208,15 +209,21 @@ class AdminViewModel(
     fun filterByRole(role: String?) {
         _uiState.update { it.copy(selectedRole = role) }
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
             try {
                 val users = if (role == null) {
                     userRepository.getAllUsers()
                 } else {
                     userRepository.getUsersByRole(role)
                 }
-                _uiState.update { it.copy(users = users) }
+                _uiState.update { it.copy(users = users, isLoading = false) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMsg = "Error al filtrar") }
+                _uiState.update {
+                    it.copy(
+                        errorMsg = "Error al filtrar: ${e.message}",
+                        isLoading = false
+                    )
+                }
             }
         }
     }
@@ -262,7 +269,7 @@ class AdminViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMsg = result.exceptionOrNull()?.message ?: "Error al eliminar"
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al eliminar: ${result.exceptionOrNull()?.message}"
                     )
                 }
             }
@@ -278,7 +285,6 @@ class AdminViewModel(
         )
     }
 
-    // --- Limpiar mensajes
     fun clearMessages() {
         _uiState.update { it.copy(errorMsg = null, successMsg = null) }
     }
