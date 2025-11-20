@@ -23,12 +23,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 data class DrawerItem(
     val label: String,
     val icon: ImageVector,
-    val onClick: () -> Unit // Acción al hacer click
+    val onClick: () -> Unit
 )
 
 @Composable
 fun AppDrawer(
-    currentRoute: String?, // Ruta actual (para marcar seleccionado)
+    currentRoute: String?,
     items: List<DrawerItem>,
     modifier: Modifier = Modifier
 ) {
@@ -38,59 +38,56 @@ fun AppDrawer(
         items.forEach { item ->
             NavigationDrawerItem(
                 label = { Text(item.label) },
-                selected = false, // SE PUEDE PASAR CURRENTRUTE
+                selected = false, // Puedes comparar con currentRoute si quieres resaltar
                 onClick = item.onClick,
                 icon = { Icon(item.icon, contentDescription = item.label) },
                 modifier = Modifier,
                 colors = NavigationDrawerItemDefaults.colors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary// 0xFF4CA771
+                    selectedContainerColor = MaterialTheme.colorScheme.primary
                 )
             )
         }
     }
 }
 
-// Helper para construir la lista estándar de ítems del drawer
 @Composable
 fun defaultDrawerItems(
-    onHome: () -> Unit,   // Acción Home
-//    onLogin: () -> Unit,  // Acción Login
-//    onRegister: () -> Unit, // Acción Registro
-    onUser: () -> Unit, //ACCION DEL PERFIL
+    onHome: () -> Unit,
+    onUser: () -> Unit,
     isAdmin: Boolean,
     onAdminPanel: () -> Unit,
-    isDoctor: Boolean = false, // NUEVO: Saber si es doctor
-    onDoctorAppointments: () -> Unit = {}, // NUEVO: Acción para ir a citas agendadas
+    isDoctor: Boolean = false,
+    onDoctorAppointments: () -> Unit = {},
     onLogout: () -> Unit
 ): List<DrawerItem> {
-    // Usamos una lista mutable para construirla dinámicamente
     val items = mutableListOf(
-        DrawerItem("Home", Icons.Filled.Home, onHome),
+        DrawerItem("Inicio", Icons.Filled.Home, onHome),
         DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
     )
 
-    // LÓGICA CONDICIONAL PARA MOSTRAR LA OPCION DE ADMIN
+    //ADMIN: Mostrar Panel de Administración
     if (isAdmin) {
         items.add(
             DrawerItem(
-                "Panel de Administración ",
+                "Panel de Administración",
                 Icons.Filled.AdminPanelSettings,
                 onAdminPanel
             )
         )
     }
 
-    // LÓGICA CONDICIONAL PARA MOSTRAR LA OPCION DE DOCTOR
+    //DOCTOR: Mostrar Mis Citas
     if (isDoctor) {
         items.add(
             DrawerItem(
-                "Citas Agendadas",
+                "Mis Citas",
                 Icons.Filled.DateRange,
                 onDoctorAppointments
             )
         )
     }
 
+    //Siempre: Cerrar Sesión
     items.add(
         DrawerItem(
             "Cerrar Sesión",

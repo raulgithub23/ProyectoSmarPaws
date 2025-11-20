@@ -156,10 +156,15 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
             } else {
                 // ruta de inicio dinámicamente
                 val startDestination = if (loginState.userId != null) {
-                    // Si el userId NO es null
-                    Route.Home.path
+                    val userProfile = authViewModel.userProfile.collectAsState().value
+
+                    when (userProfile?.rol) {
+                        "ADMIN" -> Route.AdminPanel.path
+                        "DOCTOR" -> Route.DoctorAppointments.path
+                        "USER" -> Route.Home.path
+                        else -> Route.Home.path  // Por defecto
+                    }
                 } else {
-                    // Si es null
                     Route.Login.path
                 }
 
