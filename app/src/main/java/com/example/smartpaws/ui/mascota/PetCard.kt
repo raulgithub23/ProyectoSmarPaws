@@ -33,10 +33,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.animation.animateContentSize
 import androidx.compose.material3.HorizontalDivider
+import com.example.smartpaws.data.remote.pets.PetsDto
 
 @Composable
 fun PetCard(
-    pet: PetsEntity,
+    pet: PetsDto,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {

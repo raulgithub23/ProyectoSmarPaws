@@ -19,13 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.data.remote.pets.PetsDto
 
 @Composable
 fun DialogAddPetForm(
     userId: Long,
-    initialPet: PetsEntity? = null,
+    initialPet: PetsDto? = null,
     onDismiss: () -> Unit,
-    onSavePet: (PetsEntity) -> Unit
+    onSavePet: (PetsDto) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(

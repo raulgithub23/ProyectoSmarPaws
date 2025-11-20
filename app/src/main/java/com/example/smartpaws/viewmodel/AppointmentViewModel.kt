@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
-import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.ui.mascota.PetsViewModel
@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
-import kotlinx.datetime.DayOfWeek.*
 
 //ACÁ SE MANEJA TODA LA LOGICA DE LA VISTA DE CITAS DE MASCOTAS
 @RequiresApi(Build.VERSION_CODES.O)
@@ -79,7 +78,7 @@ class AppointmentViewModel(
         }
     }
 
-    fun selectPet(pet: PetsEntity) { // Actualiza la mascota seleccionada por el usuario
+    fun selectPet(pet: PetsDto) { // Actualiza la mascota seleccionada por el usuario
         _uiState.update { it.copy(selectedPet = pet) }
     }
 
@@ -315,8 +314,8 @@ class AppointmentViewModel(
 
 data class AppointmentUiState(
     val scheduledAppointments : List<AppointmentWithDetails> = emptyList(),
-    val userPets: List<PetsEntity> = emptyList(),
-    val selectedPet: PetsEntity? = null,
+    val userPets: List<PetsDto> = emptyList(),
+    val selectedPet: PetsDto? = null,
     val selectedDate: LocalDate? = null,
     val selectedTime: String? = null,
     val selectedDoctor: DoctorWithSchedules? = null,

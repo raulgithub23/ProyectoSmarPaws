@@ -1,5 +1,7 @@
 package com.example.smartpaws.ui.mascota
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,35 +13,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.domain.validation.*
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPetForm(
     userId: Long,
-    onSavePet: (PetsEntity) -> Unit,
+    onSavePet: (PetsDto) -> Unit,
     onDismiss: () -> Unit,
-    initialPet: PetsEntity? = null,
+    initialPet: PetsDto? = null,
     modifier: Modifier = Modifier
 ) {
-    // --- ESTADOS DE LOS CAMPOS ---
+    // --- ESTADOS ---
     var nombre by rememberSaveable { mutableStateOf(initialPet?.name ?: "") }
     var especie by rememberSaveable { mutableStateOf(initialPet?.especie ?: "Perro") }
     var fechaNacimiento by rememberSaveable { mutableStateOf(initialPet?.fechaNacimiento ?: "") }
-    var peso by rememberSaveable { mutableStateOf(initialPet?.peso?.toString() ?: "") }
+    // Convertimos float a string, cuidando el null inicial
+    var peso by rememberSaveable { mutableStateOf(initialPet?.peso?.let { it.toString() } ?: "") }
     var genero by rememberSaveable { mutableStateOf(initialPet?.genero ?: "M") }
     var color by rememberSaveable { mutableStateOf(initialPet?.color ?: "") }
     var notas by rememberSaveable { mutableStateOf(initialPet?.notas ?: "") }
 
-    // --- ESTADOS DE ERROR ---
+    // --- ERRORES ---
     var nombreError by rememberSaveable { mutableStateOf<String?>(null) }
     var fechaError by rememberSaveable { mutableStateOf<String?>(null) }
     var pesoError by rememberSaveable { mutableStateOf<String?>(null) }
     var colorError by rememberSaveable { mutableStateOf<String?>(null) }
     var notasError by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // ScrollState: Se declara aquí para usarlo en la Columna principal
     val scrollState = rememberScrollState()
 
     Column(
@@ -54,11 +57,11 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- NOMBRE ---
+        // Nombre (Obligatorio)
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it; nombreError = null },
-            label = { Text("Nombre") },
+            label = { Text("Nombre *") },
             modifier = Modifier.fillMaxWidth(),
             isError = nombreError != null,
             supportingText = { nombreError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -67,10 +70,9 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- ESPECIE ---
         DropdownSelector(
-            label = "Especie",
-            options = listOf("Perro", "Gato", "Ave", "Otro"),
+            label = "Especie *",
+            options = listOf("Perro", "Gato"),
             selectedOption = especie,
             onOptionSelected = { especie = it },
             modifier = Modifier.fillMaxWidth()
@@ -78,11 +80,11 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- FECHA ---
+        // Fecha (Obligatorio)
         OutlinedTextField(
             value = fechaNacimiento,
             onValueChange = { fechaNacimiento = it; fechaError = null },
-            label = { Text("Fecha Nacimiento (yyyy-mm-dd)") },
+            label = { Text("Fecha Nacimiento (yyyy-mm-dd) *") },
             placeholder = { Text("Ej: 2024-01-30") },
             modifier = Modifier.fillMaxWidth(),
             isError = fechaError != null,
@@ -92,11 +94,11 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- PESO ---
+        // Peso (Obligatorio)
         OutlinedTextField(
             value = peso,
             onValueChange = { peso = it; pesoError = null },
-            label = { Text("Peso (kg)") },
+            label = { Text("Peso (kg) *") },
             modifier = Modifier.fillMaxWidth(),
             isError = pesoError != null,
             supportingText = { pesoError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -105,7 +107,6 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- GENERO ---
         DropdownSelector(
             label = "Género",
             options = listOf("M", "F"),
@@ -116,11 +117,11 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- COLOR ---
+        // Color (Obligatorio)
         OutlinedTextField(
             value = color,
             onValueChange = { color = it; colorError = null },
-            label = { Text("Color") },
+            label = { Text("Color *") },
             modifier = Modifier.fillMaxWidth(),
             isError = colorError != null,
             supportingText = { colorError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
@@ -128,7 +129,7 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- NOTAS ---
+        // Notas (Opcional)
         OutlinedTextField(
             value = notas,
             onValueChange = { notas = it; notasError = null },
@@ -141,7 +142,6 @@ fun AddPetForm(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- BOTÓN ---
         Button(
             onClick = {
                 nombreError = validatePetName(nombre)
@@ -154,10 +154,12 @@ fun AddPetForm(
                     .any { it != null }
 
                 if (!hasError) {
-                    val pesoFinal = peso.replace(',', '.').toFloatOrNull() ?: 0f
 
-                    val petToSave = PetsEntity(
-                        id = initialPet?.id ?: 0L,
+                    val pesoString = peso.replace(',', '.').trim()
+                    val pesoFinal = pesoString.toFloatOrNull()
+
+                    val petToSave = PetsDto(
+                        id = initialPet?.id,
                         userId = userId,
                         name = nombre.trim(),
                         especie = especie,
@@ -168,7 +170,7 @@ fun AddPetForm(
                         notas = notas.trim().ifBlank { null }
                     )
                     onSavePet(petToSave)
-                    onDismiss() // Cierra el diálogo
+                    onDismiss()
                 }
             },
             modifier = Modifier.fillMaxWidth()

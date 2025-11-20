@@ -62,7 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
-import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.YearMonth
 import kotlinx.datetime.*
@@ -503,9 +503,9 @@ fun NoPetsWarning(primaryColor: Color) {
 
 @Composable
 fun PetSelector(
-    pets: List<PetsEntity>,
-    selectedPet: PetsEntity?,
-    onPetSelected: (PetsEntity) -> Unit,
+    pets: List<PetsDto>,
+    selectedPet: PetsDto?,
+    onPetSelected: (PetsDto) -> Unit,
     primaryColor: Color,
     lightColor: Color
 ) {
@@ -527,7 +527,7 @@ fun PetSelector(
 
 @Composable
 fun PetCard(
-    pet: PetsEntity,
+    pet: PetsDto,
     isSelected: Boolean,
     onClick: () -> Unit,
     primaryColor: Color,

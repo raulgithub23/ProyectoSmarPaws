@@ -1,6 +1,10 @@
 package com.example.smartpaws.domain.validation
 
+import android.os.Build
 import android.util.Patterns
+import androidx.annotation.RequiresApi
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 fun validateEmail(email: String): String? {                            // Retorna String? (mensaje) o null si está OK
     if (email.isBlank()) return "El email es obligatorio"              // Regla 1: no vacío
@@ -45,43 +49,54 @@ fun validateConfirm(pass: String, confirm: String): String? {          // Confir
 
 /**
  * Valida el nombre de la mascota.
- * 1. No vacío.
- * 2. Mínimo 2 caracteres.
- * 3. Solo letras y espacios (sin números ni símbolos extraños).
+ * Obligatorio.
  */
 fun validatePetName(name: String): String? {
     if (name.isBlank()) return "El nombre es obligatorio"
     if (name.length < 2) return "Debe tener al menos 2 caracteres"
-    // Regex: Permite letras (incluyendo tildes/ñ) y espacios.
     val regex = Regex("^[A-Za-zÁÉÍÓÚÑáéíóúñ ]+$")
     if (!regex.matches(name)) return "El nombre no debe contener números ni símbolos"
     return null
 }
 
 /**
- * Valida el formato de fecha (YYYY-MM-DD).
- * Esto es crucial para que la base de datos (SQLite/Room) pueda ordenarlas correctamente.
+ * Valida la fecha LÓGICAMENTE y OBLIGATORIAMENTE.
  */
+@RequiresApi(Build.VERSION_CODES.O)
 fun validateDateFormat(date: String): String? {
     if (date.isBlank()) return "La fecha es obligatoria"
 
-    // Regex simple para formato yyyy-mm-dd
     val regex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
     if (!regex.matches(date)) return "Use el formato aaaa-mm-dd (Ej: 2023-05-20)"
 
+    return try {
+        val parsedDate = LocalDate.parse(date)
+        val today = LocalDate.now()
+        if (parsedDate.isAfter(today)) {
+            "La fecha no puede ser futura"
+        } else {
+            null
+        }
+    } catch (e: DateTimeParseException) {
+        "Fecha inválida (ej: mes 13 o día 32)"
+    }
+}
+
+fun validatePetNotes(notes: String): String? {
+    if (notes.isNotBlank() && notes.length > 200) {
+        return "Las notas no pueden exceder los 200 caracteres"
+    }
     return null
 }
 
 /**
- * Valida el peso.
- * 1. No vacío.
- * 2. Debe ser numérico.
- * 3. Debe ser mayor a 0 y razonable (menos de 200kg para mascotas domésticas comunes).
+ * Valida el peso OBLIGATORIAMENTE.
  */
 fun validatePetWeight(weight: String): String? {
     if (weight.isBlank()) return "El peso es obligatorio"
 
-    val weightNumber = weight.toFloatOrNull() ?: return "Ingrese un número válido (use punto para decimales)"
+    val weightNumber = weight.replace(',', '.').toFloatOrNull()
+        ?: return "Ingrese un número válido"
 
     if (weightNumber <= 0) return "El peso debe ser mayor a 0"
     if (weightNumber > 200) return "Verifique el peso (parece muy alto)"
@@ -90,30 +105,18 @@ fun validatePetWeight(weight: String): String? {
 }
 
 /**
- * Valida el color.
- * 1. No vacío.
- * 2. Solo letras (similar al nombre).
+ * Valida el color OBLIGATORIAMENTE.
  */
 fun validatePetColor(color: String): String? {
     if (color.isBlank()) return "El color es obligatorio"
-    if (color.length < 3) return "Sea más específico con el color"
 
+    if (color.length < 3) return "Sea más específico con el color"
     val regex = Regex("^[A-Za-zÁÉÍÓÚÑáéíóúñ ]+$")
     if (!regex.matches(color)) return "Solo letras y espacios"
 
     return null
 }
 
-/**
- * Valida las notas (Opcional).
- * Si el usuario escribe algo, controlamos que no sea excesivamente largo.
- */
-fun validatePetNotes(notes: String): String? {
-    if (notes.isNotBlank() && notes.length > 200) {
-        return "Las notas no pueden exceder los 200 caracteres"
-    }
-    return null
-}
 /**
  * Valida que un campo generico (Cualquiera).
  * 1. No debe estar vacía.

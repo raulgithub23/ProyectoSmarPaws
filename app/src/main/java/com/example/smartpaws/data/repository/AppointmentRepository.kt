@@ -38,7 +38,7 @@ class AppointmentRepository(
 
     suspend fun createAppointment(
         userId: Long?,
-        petId: Long,
+        petId: Long?,
         doctorId: Long,
         date: String,
         time: String,

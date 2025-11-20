@@ -6,14 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartpaws.data.local.pets.PetsEntity
-import com.example.smartpaws.ui.theme.SMARTPAWSTheme
+import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.viewmodel.AuthViewModel
-import com.example.smartpaws.viewmodel.LoginUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +23,7 @@ fun PetsScreen(
 
     // Variables locales para el diálogo
     var showAddPetDialog by rememberSaveable { mutableStateOf(false) }
-    var editingPet by rememberSaveable { mutableStateOf<PetsEntity?>(null) }
+    var editingPet by rememberSaveable { mutableStateOf<PetsDto?>(null) }
 
     // Obtenemos el ID del usuario logeado
     val currentUserId = loginState.userId ?: 0L
@@ -43,42 +39,55 @@ fun PetsScreen(
             onAddPetClick = { showAddPetDialog = true }
         )
 
-        // Contenido principal
-        when {
-            petsUiState.isLoading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            }
+        Spacer(modifier = Modifier.height(8.dp))
 
-            petsUiState.error != null -> {
-                Text(
-                    text = petsUiState.error ?: "Error desconocido",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+        if (petsUiState.error != null) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = petsUiState.error ?: "Error desconocido",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
+        }
 
-            petsUiState.petsList.isEmpty() -> {
+        if (petsUiState.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        if (petsUiState.petsList.isEmpty()) {
+            if (!petsUiState.isLoading && petsUiState.error == null) {
                 EmptyPetsState()
             }
-
-            else -> {
-                PetsList(
-                    pets = petsUiState.petsList,
-                    onEditPet = { pet ->
-                        editingPet = pet
-                        showAddPetDialog = true
-                    },
-                    onDeletePet = { pet ->
-                        petsViewModel.onEvent(PetsEvent.RemovePetFromUser(pet))
-                    }
-                )
-            }
+        } else {
+            PetsList(
+                pets = petsUiState.petsList,
+                onEditPet = { pet ->
+                    editingPet = pet
+                    showAddPetDialog = true
+                },
+                onDeletePet = { pet ->
+                    petsViewModel.onEvent(PetsEvent.RemovePetFromUser(pet))
+                }
+            )
         }
 
         // Diálogo para agregar o editar mascota
         if (showAddPetDialog) {
             DialogAddPetForm(
-                userId = editingPet?.userId ?: currentUserId, // userId correcto según login
+                userId = editingPet?.userId ?: currentUserId,
                 initialPet = editingPet,
                 onDismiss = {
                     showAddPetDialog = false
@@ -97,15 +106,3 @@ fun PetsScreen(
         }
     }
 }
-
-
-//@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE, widthDp = 320)
-//@Composable
-//fun PetsScreenPreview() {
-//    SMARTPAWSTheme(dynamicColor = false) {
-//        PetsScreen(
-//            petsViewModel = TODO(),
-//            authViewModel = TODO(),
-//        )
-//    }
-//}
