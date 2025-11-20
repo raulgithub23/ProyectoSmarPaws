@@ -1,91 +1,102 @@
 package com.example.smartpaws.data.repository
 
-import com.example.smartpaws.data.local.pets.PetsDao
-import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.data.remote.RemoteModule
+import com.example.smartpaws.data.remote.pets.PetsApiService
+import com.example.smartpaws.data.remote.pets.PetsDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import retrofit2.HttpException
 
 class PetsRepository(
-    private val petsDao: PetsDao
+    private val api: PetsApiService =
+        RemoteModule.createService("https://xd6w381w-8083.use2.devtunnels.ms/", PetsApiService::class.java)
 ) {
-    // Insertar una mascota
-    suspend fun insertPet(pet: PetsEntity): Result<Long> {
-        return try {
-            val id = petsDao.insert(pet)
-            Result.success(id)
-        } catch (e: Exception) {
-            Result.failure(e)
+
+    suspend fun insertPet(pet: PetsDto): Result<Long> = try {
+        val response = api.createPet(pet)
+        if (response.isSuccessful && response.body() != null) {
+            Result.success(response.body()!!.id ?: 0L)
+        } else {
+            Result.failure(HttpException(response))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    // Insertar múltiples mascotas
-    suspend fun insertAllPets(pets: List<PetsEntity>): Result<Unit> {
-        return try {
-            petsDao.insertAll(pets)
+    suspend fun insertAllPets(pets: List<PetsDto>): Result<Unit> = try {
+        pets.forEach { pet ->
+            val response = api.createPet(pet)
+            if (!response.isSuccessful) throw HttpException(response)
+        }
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getAllPets(): Result<List<PetsDto>> = try {
+        val response = api.getAllPets()
+        if (response.isSuccessful) {
+            Result.success(response.body() ?: emptyList())
+        } else {
+            Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getPetsByUser(userId: Long): Result<List<PetsDto>> = try {
+        val response = api.getPetsByUserId(userId)
+        if (response.isSuccessful) {
+            Result.success(response.body() ?: emptyList())
+        } else {
+            // Si es 204 (No Content) devolvemos lista vacía, sino error
+            if (response.code() == 204) Result.success(emptyList())
+            else Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getPetById(petId: Long): Result<PetsDto?> = try {
+        val response = api.getPetById(petId)
+        if (response.isSuccessful) {
+            Result.success(response.body())
+        } else {
+            if (response.code() == 404) Result.success(null)
+            else Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun updatePet(pet: PetsDto): Result<Unit> = try {
+        // Necesitamos el ID para la URL, y el cuerpo es el DTO
+        val id = pet.id ?: throw Exception("El ID de la mascota es nulo")
+        val response = api.updatePet(id, pet)
+
+        if (response.isSuccessful) {
             Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } else {
+            Result.failure(HttpException(response))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    // Obtener todas las mascotas
-    suspend fun getAllPets(): Result<List<PetsEntity>> {
-        return try {
-            val pets = petsDao.getAllPets()
-            Result.success(pets)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend fun deletePet(pet: PetsDto): Result<Unit> = try {
+        val id = pet.id ?: throw Exception("El ID de la mascota es nulo")
+        val response = api.deletePet(id)
 
-    // Obtener mascotas por usuario
-    suspend fun getPetsByUser(userId: Long): Result<List<PetsEntity>> {
-        return try {
-            val pets = petsDao.getPetsByUser(userId)
-            Result.success(pets)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // Obtener mascota por ID
-    suspend fun getPetById(petId: Long): Result<PetsEntity?> {
-        return try {
-            val pet = petsDao.getPetById(petId)
-            Result.success(pet)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // Actualizar mascota
-    suspend fun updatePet(pet: PetsEntity): Result<Unit> {
-        return try {
-            petsDao.update(pet)
+        if (response.isSuccessful) {
             Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } else {
+            Result.failure(HttpException(response))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    // Eliminar mascota
-    suspend fun deletePet(pet: PetsEntity): Result<Unit> {
-        return try {
-            petsDao.delete(pet)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    fun observePetsByUser(userId: Long): Flow<Result<List<PetsDto>>> = flow {
+        emit(getPetsByUser(userId))
     }
-
-    fun observePetsByUser(userId: Long): Flow<Result<List<PetsEntity>>> = flow {
-        try {
-            petsDao.observePetsByUser(userId).collect { pets ->
-                emit(Result.success(pets))
-            }
-        } catch (e: Exception) {
-            emit(Result.failure(e))
-        }
-    }
-
 }

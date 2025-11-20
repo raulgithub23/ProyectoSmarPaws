@@ -95,7 +95,7 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
 
     val appointmentRepository = AppointmentRepository(appointmentDao)
     val doctorRepository = DoctorRepository(doctorDao)
-    val petsRepository = PetsRepository(petsDao)
+    val petsRepository = PetsRepository()
 
 
     // ^ Repositorio que encapsula la lógica de gestión de citas.

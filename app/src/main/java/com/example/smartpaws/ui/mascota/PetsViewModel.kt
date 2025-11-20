@@ -3,6 +3,7 @@ package com.example.smartpaws.ui.mascota
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartpaws.data.local.pets.PetsEntity
+import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.viewmodel.AuthViewModel
 import kotlinx.coroutines.Job
@@ -109,7 +110,7 @@ class PetsViewModel(
         }
     }
 
-    private fun addNewPet(pet: PetsEntity) {
+    private fun addNewPet(pet: PetsDto) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -128,7 +129,7 @@ class PetsViewModel(
         }
     }
 
-    private fun editPetInformation(pet: PetsEntity) {
+    private fun editPetInformation(pet: PetsDto) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -147,7 +148,7 @@ class PetsViewModel(
         }
     }
 
-    private fun removePet(pet: PetsEntity) {
+    private fun removePet(pet: PetsDto) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 

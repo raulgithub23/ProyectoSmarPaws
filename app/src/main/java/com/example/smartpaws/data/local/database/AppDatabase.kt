@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
         AppointmentEntity::class,
         PetFactEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase(){
