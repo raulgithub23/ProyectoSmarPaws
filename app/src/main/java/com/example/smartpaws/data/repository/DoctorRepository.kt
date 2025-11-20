@@ -1,5 +1,6 @@
 package com.example.smartpaws.data.repository
 
+import android.util.Log
 import com.example.smartpaws.data.local.doctors.DoctorEntity
 import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
@@ -36,7 +37,7 @@ class DoctorRepository {
                 DoctorWithSchedules(doctor, schedules)
             }
         } catch (e: Exception) {
-            android.util.Log.e("DoctorRepository", "Error obteniendo doctores", e)
+            Log.e("DoctorRepository", "Error obteniendo doctores", e)
             emptyList()
         }
     }
@@ -62,6 +63,7 @@ class DoctorRepository {
             }
             Result.success(DoctorWithSchedules(doctor, schedules))
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error obteniendo doctor por ID: $doctorId", e)
             Result.failure(e)
         }
     }
@@ -87,6 +89,7 @@ class DoctorRepository {
             }
             Result.success(DoctorWithSchedules(doctor, schedules))
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error obteniendo doctor por email: $email", e)
             Result.failure(e)
         }
     }
@@ -109,16 +112,21 @@ class DoctorRepository {
             }
             val request = CreateDoctorRequest(name, specialty, email, phone, scheduleDtos)
             val response = api.createDoctor(request)
+            Log.d("DoctorRepository", "Doctor creado exitosamente con ID: ${response.id}")
             Result.success(response.id)
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error creando doctor", e)
             Result.failure(e)
         }
     }
 
     suspend fun hasDoctors(): Boolean {
         return try {
-            api.countDoctors() > 0
+            val count = api.countDoctors()
+            Log.d("DoctorRepository", "Cantidad de doctores: $count")
+            count > 0
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error verificando existencia de doctores", e)
             false
         }
     }
@@ -127,7 +135,7 @@ class DoctorRepository {
         return try {
             val scheduleDtos = newSchedules.map {
                 ScheduleDto(
-                    id = null,
+                    id = null, // El backend generará nuevos IDs
                     dayOfWeek = it.dayOfWeek,
                     startTime = it.startTime,
                     endTime = it.endTime
@@ -135,8 +143,10 @@ class DoctorRepository {
             }
             val request = UpdateSchedulesRequest(scheduleDtos)
             api.updateSchedules(doctorId, request)
+            Log.d("DoctorRepository", "Horarios actualizados para doctor ID: $doctorId")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error actualizando horarios del doctor $doctorId", e)
             Result.failure(e)
         }
     }
@@ -144,8 +154,10 @@ class DoctorRepository {
     suspend fun deleteDoctor(doctor: DoctorEntity): Result<Unit> {
         return try {
             api.deleteDoctor(doctor.id)
+            Log.d("DoctorRepository", "Doctor eliminado: ${doctor.name} (ID: ${doctor.id})")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error eliminando doctor ${doctor.id}", e)
             Result.failure(e)
         }
     }
