@@ -1,0 +1,9 @@
+package com.example.smartpaws.data.remote.dto
+
+data class CreateDoctorRequest(
+    val name: String,
+    val specialty: String,
+    val email: String,
+    val phone: String?,
+    val schedules: List<ScheduleDto>
+)

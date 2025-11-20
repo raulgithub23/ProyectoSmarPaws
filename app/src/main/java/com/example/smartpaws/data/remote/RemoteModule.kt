@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit
 
 object RemoteModule {
 
-    // REEMPLAZA ESTA URL CON LA TUYA DE VSCODE PORT FORWARDING
-    private const val BASE_URL = "https://94js12g4-8081.brs.devtunnels.ms/"
+    private const val AUTH_BASE_URL = "https://94js12g4-8081.brs.devtunnels.ms/"
+    private const val DOCTOR_BASE_URL = "https://94js12g4-8082.brs.devtunnels.ms/"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -22,11 +22,18 @@ object RemoteModule {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private val retrofit: Retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+    private val authRetrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(AUTH_BASE_URL)
         .client(okHttp)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    fun <T> create(service: Class<T>): T = retrofit.create(service)
+    private val doctorRetrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(DOCTOR_BASE_URL)
+        .client(okHttp)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    fun <T> createAuthService(service: Class<T>): T = authRetrofit.create(service)
+    fun <T> createDoctorService(service: Class<T>): T = doctorRetrofit.create(service)
 }

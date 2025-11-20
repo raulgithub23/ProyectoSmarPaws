@@ -1,5 +1,6 @@
 package com.example.smartpaws.navigation
 
+import DoctorAppointmentsViewModelFactory
 import HistoryViewModel
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -47,7 +48,7 @@ import com.example.smartpaws.viewmodel.AuthViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import com.example.smartpaws.viewmodel.HomeViewModel
 import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModel
-import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModelFactory
+
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -62,7 +63,7 @@ fun AppNavGraph(
     petsViewModel: PetsViewModel,
     homeViewModel: HomeViewModel,
     adminViewModel: AdminViewModel,
-    historyViewModelFactory: HistoryViewModelFactory
+    historyViewModelFactory: HistoryViewModelFactory,
 ) {
 
     NavHost(

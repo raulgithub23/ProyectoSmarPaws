@@ -1,14 +1,11 @@
 package com.example.smartpaws.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AdminPanelSettings
-import androidx.compose.material.icons.filled.DateRange // Import necesario para el icono de citas
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -17,7 +14,6 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
 data class DrawerItem(
@@ -38,7 +34,7 @@ fun AppDrawer(
         items.forEach { item ->
             NavigationDrawerItem(
                 label = { Text(item.label) },
-                selected = false, // Puedes comparar con currentRoute si quieres resaltar
+                selected = false,
                 onClick = item.onClick,
                 icon = { Icon(item.icon, contentDescription = item.label) },
                 modifier = Modifier,
@@ -60,12 +56,20 @@ fun defaultDrawerItems(
     onDoctorAppointments: () -> Unit = {},
     onLogout: () -> Unit
 ): List<DrawerItem> {
-    val items = mutableListOf(
-        DrawerItem("Inicio", Icons.Filled.Home, onHome),
-        DrawerItem("Perfil", Icons.Filled.AccountBox, onUser)
-    )
+    val items = mutableListOf<DrawerItem>()
 
-    //ADMIN: Mostrar Panel de Administración
+    // DOCTOR (pero NO admin): Ver sus citas
+    if (isDoctor && !isAdmin) {
+        items.add(
+            DrawerItem(
+                "Mis Citas",
+                Icons.Filled.DateRange,
+                onDoctorAppointments
+            )
+        )
+    }
+
+    // ADMIN: Panel de administración
     if (isAdmin) {
         items.add(
             DrawerItem(
@@ -76,18 +80,27 @@ fun defaultDrawerItems(
         )
     }
 
-    //DOCTOR: Mostrar Mis Citas
-    if (isDoctor) {
+    // Usuarios normales (o admin como comodín): Inicio
+    if (!isDoctor || isAdmin) {
         items.add(
             DrawerItem(
-                "Mis Citas",
-                Icons.Filled.DateRange,
-                onDoctorAppointments
+                "Inicio",
+                Icons.Filled.Home,
+                onHome
             )
         )
     }
 
-    //Siempre: Cerrar Sesión
+    // Todos: Perfil
+    items.add(
+        DrawerItem(
+            "Perfil",
+            Icons.Filled.AccountBox,
+            onUser
+        )
+    )
+
+    // Todos: Cerrar Sesión
     items.add(
         DrawerItem(
             "Cerrar Sesión",

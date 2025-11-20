@@ -9,7 +9,7 @@ import com.example.smartpaws.data.remote.dto.UpdateRoleRequest
 
 class UserRepository {
 
-    private val api: AuthApiService = RemoteModule.create(AuthApiService::class.java)
+    private val api: AuthApiService = RemoteModule.createAuthService(AuthApiService::class.java)
 
     suspend fun login(email: String, password: String): Result<UserEntity> {
         return try {
