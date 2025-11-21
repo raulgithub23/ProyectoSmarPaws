@@ -57,10 +57,11 @@ class DoctorAppointmentsViewModel(
                 val doctorResult = doctorRepository.getDoctorByEmail(userEmail)
 
                 if (doctorResult.isSuccess) {
-                    val doctorWithSchedules = doctorResult.getOrNull()!!
-                    _uiState.update { it.copy(doctorName = doctorWithSchedules.doctor.name) }
+                    val doctorDto = doctorResult.getOrNull()!!
 
-                    val appointmentsResult = appointmentRepository.getAppointmentsForDoctor(doctorWithSchedules.doctor.id)
+                    _uiState.update { it.copy(doctorName = doctorDto.name) }
+
+                    val appointmentsResult = appointmentRepository.getAppointmentsForDoctor(doctorDto.id)
 
                     appointmentsResult.fold(
                         onSuccess = { dtoList ->
@@ -97,7 +98,7 @@ class DoctorAppointmentsViewModel(
             petRepository.getPetById(dto.petId).getOrNull()
         } else null
 
-        val userEntity = if (dto.userId != null) {
+        val userDto = if (dto.userId != null) {
             try {
                 userRepository.getUserById(dto.userId)
             } catch (e: Exception) {
@@ -114,8 +115,8 @@ class DoctorAppointmentsViewModel(
             petName = petDto?.name ?: "Mascota #${dto.petId ?: "?"}",
             petEspecie = petDto?.especie ?: "Desconocido",
             ownerId = dto.userId,
-            ownerName = userEntity?.name ?: "Dueño #${dto.userId ?: "?"}",
-            ownerPhone = userEntity?.phone ?: "Sin teléfono"
+            ownerName = userDto?.name ?: "Dueño #${dto.userId ?: "?"}",
+            ownerPhone = userDto?.phone ?: "Sin teléfono"
         )
     }
 }

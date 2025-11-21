@@ -190,7 +190,8 @@ class HistoryViewModel(
             petsRepository.getPetById(dto.petId).getOrNull()?.name ?: "Mascota desconocida"
         } else "Sin mascota"
 
-        val doctorObj = doctorRepository.getDoctorWithSchedules(dto.doctorId).getOrNull()
+        // getDoctorWithSchedules ahora retorna un Result<DoctorDto>
+        val doctorDto = doctorRepository.getDoctorWithSchedules(dto.doctorId).getOrNull()
 
         return HistoryAppointmentUiItem(
             id = dto.id,
@@ -198,8 +199,8 @@ class HistoryViewModel(
             time = dto.time,
             notes = dto.notes,
             petName = petName,
-            doctorName = doctorObj?.doctor?.name ?: "Doctor desconocido",
-            doctorSpecialty = doctorObj?.doctor?.specialty
+            doctorName = doctorDto?.name ?: "Doctor desconocido",
+            doctorSpecialty = doctorDto?.specialty
         )
     }
 }

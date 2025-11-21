@@ -1,93 +1,40 @@
 package com.example.smartpaws.data.repository
 
 import android.util.Log
-import com.example.smartpaws.data.local.doctors.DoctorEntity
-import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
-import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
 import com.example.smartpaws.data.remote.DoctorApiService
 import com.example.smartpaws.data.remote.RemoteModule
 import com.example.smartpaws.data.remote.dto.CreateDoctorRequest
+import com.example.smartpaws.data.remote.dto.DoctorDto
 import com.example.smartpaws.data.remote.dto.ScheduleDto
 import com.example.smartpaws.data.remote.dto.UpdateSchedulesRequest
 
-class DoctorRepository {
-
+class DoctorRepository(
     private val api: DoctorApiService = RemoteModule.createDoctorService(DoctorApiService::class.java)
+) {
 
-    suspend fun getAllDoctorsWithSchedules(): List<DoctorWithSchedules> {
+    suspend fun getAllDoctorsWithSchedules(): List<DoctorDto> {
         return try {
-            val doctorsDto = api.getAllDoctors()
-            doctorsDto.map { dto ->
-                val doctor = DoctorEntity(
-                    id = dto.id,
-                    name = dto.name,
-                    specialty = dto.specialty,
-                    email = dto.email,
-                    phone = dto.phone
-                )
-                val schedules = dto.schedules.map { scheduleDto ->
-                    DoctorScheduleEntity(
-                        id = scheduleDto.id ?: 0L,
-                        doctorId = dto.id,
-                        dayOfWeek = scheduleDto.dayOfWeek,
-                        startTime = scheduleDto.startTime,
-                        endTime = scheduleDto.endTime
-                    )
-                }
-                DoctorWithSchedules(doctor, schedules)
-            }
+            api.getAllDoctors()
         } catch (e: Exception) {
             Log.e("DoctorRepository", "Error obteniendo doctores", e)
             emptyList()
         }
     }
 
-    suspend fun getDoctorWithSchedules(doctorId: Long): Result<DoctorWithSchedules> {
+    suspend fun getDoctorWithSchedules(doctorId: Long): Result<DoctorDto> {
         return try {
             val dto = api.getDoctorById(doctorId)
-            val doctor = DoctorEntity(
-                id = dto.id,
-                name = dto.name,
-                specialty = dto.specialty,
-                email = dto.email,
-                phone = dto.phone
-            )
-            val schedules = dto.schedules.map { scheduleDto ->
-                DoctorScheduleEntity(
-                    id = scheduleDto.id ?: 0L,
-                    doctorId = dto.id,
-                    dayOfWeek = scheduleDto.dayOfWeek,
-                    startTime = scheduleDto.startTime,
-                    endTime = scheduleDto.endTime
-                )
-            }
-            Result.success(DoctorWithSchedules(doctor, schedules))
+            Result.success(dto)
         } catch (e: Exception) {
             Log.e("DoctorRepository", "Error obteniendo doctor por ID: $doctorId", e)
             Result.failure(e)
         }
     }
 
-    suspend fun getDoctorByEmail(email: String): Result<DoctorWithSchedules> {
+    suspend fun getDoctorByEmail(email: String): Result<DoctorDto> {
         return try {
             val dto = api.getDoctorByEmail(email)
-            val doctor = DoctorEntity(
-                id = dto.id,
-                name = dto.name,
-                specialty = dto.specialty,
-                email = dto.email,
-                phone = dto.phone
-            )
-            val schedules = dto.schedules.map { scheduleDto ->
-                DoctorScheduleEntity(
-                    id = scheduleDto.id ?: 0L,
-                    doctorId = dto.id,
-                    dayOfWeek = scheduleDto.dayOfWeek,
-                    startTime = scheduleDto.startTime,
-                    endTime = scheduleDto.endTime
-                )
-            }
-            Result.success(DoctorWithSchedules(doctor, schedules))
+            Result.success(dto)
         } catch (e: Exception) {
             Log.e("DoctorRepository", "Error obteniendo doctor por email: $email", e)
             Result.failure(e)
@@ -99,7 +46,7 @@ class DoctorRepository {
         specialty: String,
         email: String,
         phone: String? = null,
-        schedules: List<DoctorScheduleEntity>
+        schedules: List<ScheduleDto>
     ): Result<Long> {
         return try {
             val scheduleDtos = schedules.map {
@@ -123,7 +70,6 @@ class DoctorRepository {
     suspend fun hasDoctors(): Boolean {
         return try {
             val count = api.countDoctors()
-            Log.d("DoctorRepository", "Cantidad de doctores: $count")
             count > 0
         } catch (e: Exception) {
             Log.e("DoctorRepository", "Error verificando existencia de doctores", e)
@@ -131,11 +77,11 @@ class DoctorRepository {
         }
     }
 
-    suspend fun updateSchedules(doctorId: Long, newSchedules: List<DoctorScheduleEntity>): Result<Unit> {
+    suspend fun updateSchedules(doctorId: Long, newSchedules: List<ScheduleDto>): Result<Unit> {
         return try {
             val scheduleDtos = newSchedules.map {
                 ScheduleDto(
-                    id = null, // El backend generará nuevos IDs
+                    id = null,
                     dayOfWeek = it.dayOfWeek,
                     startTime = it.startTime,
                     endTime = it.endTime
@@ -151,13 +97,13 @@ class DoctorRepository {
         }
     }
 
-    suspend fun deleteDoctor(doctor: DoctorEntity): Result<Unit> {
+    suspend fun deleteDoctor(doctorId: Long): Result<Unit> {
         return try {
-            api.deleteDoctor(doctor.id)
-            Log.d("DoctorRepository", "Doctor eliminado: ${doctor.name} (ID: ${doctor.id})")
+            api.deleteDoctor(doctorId)
+            Log.d("DoctorRepository", "Doctor eliminado ID: $doctorId")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("DoctorRepository", "Error eliminando doctor ${doctor.id}", e)
+            Log.e("DoctorRepository", "Error eliminando doctor $doctorId", e)
             Result.failure(e)
         }
     }

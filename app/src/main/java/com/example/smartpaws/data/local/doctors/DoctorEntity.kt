@@ -1,9 +1,7 @@
 package com.example.smartpaws.data.local.doctors
 
-import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.Relation
 
 @Entity(tableName = "doctors")
 data class DoctorEntity(
@@ -13,5 +11,7 @@ data class DoctorEntity(
     val specialty: String,
     val phone: String? = null,
     val email: String,
+    val string: String,
+    val string1: String,
 )
 

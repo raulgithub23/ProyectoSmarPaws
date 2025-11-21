@@ -60,7 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import com.example.smartpaws.data.remote.dto.DoctorDto // CAMBIO: Importamos DTO
 import com.example.smartpaws.data.remote.appointments.AppointmentResponseDto
 import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.viewmodel.AppointmentViewModel
@@ -126,7 +126,8 @@ fun AppointmentScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "con ${uiState.selectedDoctor?.doctor?.name}",
+                        // CAMBIO: Acceso directo a propiedades DTO
+                        text = "con ${uiState.selectedDoctor?.name}",
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -227,7 +228,7 @@ fun AppointmentScreen(
             ScheduledAppointmentsList(
                 appointments = uiState.scheduledAppointments,
                 pets = uiState.userPets,
-                doctors = uiState.doctors,
+                doctors = uiState.doctors, // Esto es List<DoctorDto>
                 primaryColor = green,
                 lightColor = lightGreen,
                 onDeleteClick = { appointment ->
@@ -295,8 +296,8 @@ fun AppointmentScreen(
             }
         } else {
             DoctorSelector(
-                doctors = uiState.doctors,
-                selectedDoctor = uiState.selectedDoctor,
+                doctors = uiState.doctors, // List<DoctorDto>
+                selectedDoctor = uiState.selectedDoctor, // DoctorDto?
                 onDoctorSelected = { viewModel.selectDoctor(it) },
                 primaryColor = green,
                 lightColor = lightGreen,
@@ -602,9 +603,9 @@ fun PetCard(
 
 @Composable
 fun DoctorSelector(
-    doctors: List<DoctorWithSchedules>,
-    selectedDoctor: DoctorWithSchedules?,
-    onDoctorSelected: (DoctorWithSchedules) -> Unit,
+    doctors: List<DoctorDto>, // CAMBIO: Recibe DTO
+    selectedDoctor: DoctorDto?, // CAMBIO: Recibe DTO
+    onDoctorSelected: (DoctorDto) -> Unit,
     primaryColor: Color,
     lightColor: Color,
     enabled: Boolean = true
@@ -629,7 +630,7 @@ fun DoctorSelector(
         items(doctors) { doctor ->
             DoctorCard(
                 doctor = doctor,
-                isSelected = doctor.doctor.id == selectedDoctor?.doctor?.id,
+                isSelected = doctor.id == selectedDoctor?.id, // CAMBIO: Comparación directa de IDs
                 onClick = { if (enabled) onDoctorSelected(doctor) },
                 primaryColor = primaryColor,
                 lightColor = lightColor,
@@ -641,7 +642,7 @@ fun DoctorSelector(
 
 @Composable
 fun DoctorCard(
-    doctor: DoctorWithSchedules,
+    doctor: DoctorDto, // CAMBIO: Recibe DTO
     isSelected: Boolean,
     onClick: () -> Unit,
     primaryColor: Color,
@@ -685,7 +686,7 @@ fun DoctorCard(
             Spacer(Modifier.height(8.dp))
 
             Text(
-                text = doctor.doctor.name,
+                text = doctor.name, // CAMBIO: doctor.name directo
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = if (enabled) Color.Black else Color.Gray,
@@ -695,7 +696,7 @@ fun DoctorCard(
             )
 
             Text(
-                text = doctor.doctor.specialty,
+                text = doctor.specialty, // CAMBIO: doctor.specialty directo
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.Center,
@@ -886,7 +887,7 @@ fun TimeSlotButton(
 fun ScheduledAppointmentsList(
     appointments: List<AppointmentResponseDto>,
     pets: List<PetsDto>,
-    doctors: List<DoctorWithSchedules>,
+    doctors: List<DoctorDto>, // CAMBIO: List<DoctorDto>
     primaryColor: Color,
     lightColor: Color,
     onDeleteClick: (AppointmentResponseDto) -> Unit
@@ -912,13 +913,14 @@ fun ScheduledAppointmentsList(
 fun ScheduledAppointmentCard(
     appointment: AppointmentResponseDto,
     pets: List<PetsDto>,
-    doctors: List<DoctorWithSchedules>,
+    doctors: List<DoctorDto>, // CAMBIO: List<DoctorDto>
     primaryColor: Color,
     lightColor: Color,
     onDeleteClick: () -> Unit
 ) {
     val petName = pets.find { it.id == appointment.petId }?.name ?: "Mascota desconocida"
-    val doctorObj = doctors.find { it.doctor.id == appointment.doctorId }?.doctor
+    // CAMBIO: Búsqueda directa en lista de DTOs
+    val doctorObj = doctors.find { it.id == appointment.doctorId }
     val doctorName = doctorObj?.name ?: "Doctor desconocido"
     val doctorSpecialty = doctorObj?.specialty
 

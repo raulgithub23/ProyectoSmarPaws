@@ -28,10 +28,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.smartpaws.data.local.doctors.DoctorEntity
-import com.example.smartpaws.data.local.doctors.DoctorScheduleEntity
-import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
-import com.example.smartpaws.data.local.user.UserEntity
+import com.example.smartpaws.data.remote.dto.DoctorDto
+import com.example.smartpaws.data.remote.dto.ScheduleDto
+import com.example.smartpaws.data.remote.dto.UserDto // Asumiendo que creaste este DTO para usuarios
 import com.example.smartpaws.domain.validation.validateEmail
 import com.example.smartpaws.domain.validation.validateNameLettersOnly
 import com.example.smartpaws.domain.validation.validateNotEmpty
@@ -41,7 +40,6 @@ import com.example.smartpaws.viewmodel.AdminStats
 import com.example.smartpaws.viewmodel.AdminUiState
 import com.example.smartpaws.viewmodel.AdminViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPanelScreen(viewModel: AdminViewModel) {
@@ -50,16 +48,16 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
 
     // Estados para los diálogos
     var showCreateDoctorDialog by remember { mutableStateOf(false) }
-    var showDeleteUserDialog by remember { mutableStateOf<UserEntity?>(null) }
-    var showChangeRoleDialog by remember { mutableStateOf<UserEntity?>(null) }
-    var showDeleteDoctorDialog by remember { mutableStateOf<DoctorEntity?>(null) }
-    var showScheduleDialog by remember { mutableStateOf<DoctorWithSchedules?>(null) }
+    var showDeleteUserDialog by remember { mutableStateOf<UserDto?>(null) } // CAMBIO: UserDto
+    var showChangeRoleDialog by remember { mutableStateOf<UserDto?>(null) } // CAMBIO: UserDto
+    var showDeleteDoctorDialog by remember { mutableStateOf<DoctorDto?>(null) } // CAMBIO: DoctorDto
+    var showScheduleDialog by remember { mutableStateOf<DoctorDto?>(null) } // CAMBIO: DoctorDto (ya contiene los horarios)
 
     // Estado para las pestañas
     var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Usuarios", "Doctores")
 
-    //Para el re-render del composable asi e
+    //Para el re-render del composable
     LaunchedEffect(Unit) {
         viewModel.loadAllData()
     }
@@ -95,7 +93,6 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             // PESTAÑAS
@@ -123,7 +120,7 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
                 1 -> DoctorsTabContent(
                     uiState = uiState,
                     onEditSchedulesClick = { showScheduleDialog = it },
-                    onDeleteProfileClick = { showDeleteDoctorDialog = it.doctor }
+                    onDeleteProfileClick = { showDeleteDoctorDialog = it }
                 )
             }
         }
@@ -131,7 +128,7 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
 
     // --- Diálogos ---
 
-    // Diálogo para CREAR Doctor (User + Profile)
+    // Diálogo para CREAR Doctor
     if (showCreateDoctorDialog) {
         CreateDoctorDialog(
             onDismiss = { showCreateDoctorDialog = false },
@@ -143,9 +140,9 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
     }
 
     // Diálogo para GESTIONAR HORARIOS
-    showScheduleDialog?.let { doctorWithSchedules ->
+    showScheduleDialog?.let { doctor ->
         ManageScheduleDialog(
-            doctorWithSchedules = doctorWithSchedules,
+            doctor = doctor,
             onDismiss = { showScheduleDialog = null },
             onConfirm = { doctorId, newSchedules ->
                 viewModel.updateDoctorSchedules(doctorId, newSchedules)
@@ -161,7 +158,7 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
             text = "¿Estás seguro de que deseas eliminar el perfil de ${doctor.name}? Esto no eliminará su cuenta de usuario, solo su perfil de doctor.",
             onDismiss = { showDeleteDoctorDialog = null },
             onConfirm = {
-                viewModel.deleteDoctorProfile(doctor)
+                viewModel.deleteDoctorProfile(doctor.id) // CAMBIO: Usamos ID
                 showDeleteDoctorDialog = null
             }
         )
@@ -198,13 +195,11 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
 fun UsersTabContent(
     uiState: AdminUiState,
     viewModel: AdminViewModel,
-    onChangeRoleClick: (UserEntity) -> Unit,
-    onDeleteClick: (UserEntity) -> Unit
+    onChangeRoleClick: (UserDto) -> Unit, // CAMBIO: UserDto
+    onDeleteClick: (UserDto) -> Unit // CAMBIO: UserDto
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
-//            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 1. Tarjeta de Estadísticas
@@ -246,13 +241,11 @@ fun UsersTabContent(
 @Composable
 fun DoctorsTabContent(
     uiState: AdminUiState,
-    onEditSchedulesClick: (DoctorWithSchedules) -> Unit,
-    onDeleteProfileClick: (DoctorWithSchedules) -> Unit
+    onEditSchedulesClick: (DoctorDto) -> Unit, // CAMBIO: DoctorDto
+    onDeleteProfileClick: (DoctorDto) -> Unit  // CAMBIO: DoctorDto
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
-//            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -270,11 +263,12 @@ fun DoctorsTabContent(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(uiState.doctors, key = { it.doctor.id }) { doctorWithSchedules ->
+            // CAMBIO: uiState.doctors ahora es List<DoctorDto>
+            items(uiState.doctors, key = { it.id }) { doctor ->
                 DoctorListItem(
-                    doctorWithSchedules = doctorWithSchedules,
-                    onEditSchedules = { onEditSchedulesClick(doctorWithSchedules) },
-                    onDeleteProfile = { onDeleteProfileClick(doctorWithSchedules) }
+                    doctor = doctor,
+                    onEditSchedules = { onEditSchedulesClick(doctor) },
+                    onDeleteProfile = { onDeleteProfileClick(doctor) }
                 )
             }
         }
@@ -375,7 +369,7 @@ fun UserListControls(
 
 @Composable
 fun UserListItem(
-    user: UserEntity,
+    user: UserDto, // CAMBIO: UserDto
     onChangeRoleClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -392,7 +386,8 @@ fun UserListItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(user.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("Email: ${user.email}", style = MaterialTheme.typography.bodyMedium)
-                Text("Tel: ${user.phone}", style = MaterialTheme.typography.bodySmall)
+                // Verificamos nulos por si acaso en el DTO
+                Text("Tel: ${user.phone ?: "Sin teléfono"}", style = MaterialTheme.typography.bodySmall)
                 Text(
                     "Rol: ${user.rol}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -595,12 +590,11 @@ fun CreateDoctorDialog(
 
 @Composable
 fun DoctorListItem(
-    doctorWithSchedules: DoctorWithSchedules,
+    doctor: DoctorDto, // CAMBIO: DoctorDto (ya trae los horarios dentro)
     onEditSchedules: () -> Unit,
     onDeleteProfile: () -> Unit
 ) {
-    val doctor = doctorWithSchedules.doctor
-    val schedules = doctorWithSchedules.schedules
+    val schedules = doctor.schedules
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -646,13 +640,13 @@ fun DoctorListItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageScheduleDialog(
-    doctorWithSchedules: DoctorWithSchedules,
+    doctor: DoctorDto, // CAMBIO: Recibe el DTO completo
     onDismiss: () -> Unit,
-    onConfirm: (doctorId: Long, newSchedules: List<DoctorScheduleEntity>) -> Unit
+    onConfirm: (doctorId: Long, newSchedules: List<ScheduleDto>) -> Unit
 ) {
-    // Lista mutable interna para gestionar los cambios
-    val schedules = remember { mutableStateListOf<DoctorScheduleEntity>().apply {
-        addAll(doctorWithSchedules.schedules)
+    // CAMBIO: Usamos ScheduleDto. MutableStateListOf de ScheduleDto.
+    val schedules = remember { mutableStateListOf<ScheduleDto>().apply {
+        addAll(doctor.schedules)
     }}
 
     // Estado para los inputs de nuevo horario
@@ -664,7 +658,7 @@ fun ManageScheduleDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Gestionar Horarios de ${doctorWithSchedules.doctor.name}") },
+        title = { Text("Gestionar Horarios de ${doctor.name}") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 // --- Sección para añadir nuevos horarios ---
@@ -715,10 +709,11 @@ fun ManageScheduleDialog(
                 }
                 Button(
                     onClick = {
-                        // Añade el nuevo horario a la lista local
+                        // CAMBIO: Añade el nuevo horario como ScheduleDto.
+                        // id es null porque es nuevo y aun no lo crea el backend.
                         schedules.add(
-                            DoctorScheduleEntity(
-                                doctorId = doctorWithSchedules.doctor.id,
+                            ScheduleDto(
+                                id = null,
                                 dayOfWeek = selectedDay,
                                 startTime = startTime,
                                 endTime = endTime
@@ -765,7 +760,7 @@ fun ManageScheduleDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(doctorWithSchedules.doctor.id, schedules) }) {
+            Button(onClick = { onConfirm(doctor.id, schedules) }) {
                 Text("Guardar Cambios")
             }
         },
@@ -806,7 +801,7 @@ fun DeleteConfirmationDialog(
 
 @Composable
 fun ChangeRoleDialog(
-    user: UserEntity,
+    user: UserDto, // CAMBIO: UserDto
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {

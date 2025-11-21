@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.example.smartpaws.data.local.database.AppDatabase
+//import com.example.smartpaws.data.local.database.AppDatabase
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository
@@ -74,21 +74,21 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
 
     val userPreferences = remember { UserPreferences(context) }
 
-    val db = AppDatabase.getInstance(context)
+//    val db = AppDatabase.getInstance(context)
     // ^ Singleton de Room. No crea múltiples instancias.
 
-    val userDao = db.userDao()
+//    val userDao = db.userDao()
     // ^ Obtenemos el DAO de usuarios desde la DB.
 
-    val appointmentDao = db.appointmentDao()
+//    val appointmentDao = db.appointmentDao()
     // ^ Obtenemos el DAO de citas desde la DB.
     // Los DAOs contienen las queries SQL (@Query, @Insert, @Update, @Delete)
 
-    val doctorDao = db.doctorDao()
+//    val doctorDao = db.doctorDao()
 
-    val petFactDao =  db.petFactDao()
+//    val petFactDao =  db.petFactDao()
 
-    val petsDao = db.petsDao()
+//    val petsDao = db.petsDao()
 
     val userRepository = UserRepository()
     // ^ Repositorio que encapsula la lógica de login/registro contra Room.
@@ -117,7 +117,7 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(
             repository = appointmentRepository,
-            petFactDao = petFactDao,
+//            petFactDao = petFactDao,
             authViewModel = authViewModel,
             petsRepository = petsRepository,
             doctorRepository = doctorRepository

@@ -13,7 +13,8 @@ class AdminViewModelFactory(
         if (modelClass.isAssignableFrom(AdminViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return AdminViewModel(userRepository = repository,
-                                doctorRepository) as T
+                doctorRepository = doctorRepository
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.smartpaws.R
-import com.example.smartpaws.data.local.pets.PetFactEntity
+import com.example.smartpaws.data.remote.pets.PetFact
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.ui.theme.LightBackground
 import com.example.smartpaws.ui.theme.LightSecondary
@@ -139,7 +139,7 @@ fun HomeScreen(
 // Tarjeta de dato curioso con botón refrescar
 @Composable
 fun PetFactCard(
-    fact: PetFactEntity, // Entidad o tabla que contiene el dato curioso
+    fact: PetFact, // Entidad o tabla que contiene el dato curioso
     cardColor: Color,
     textColor: Color,
     onRefresh: () -> Unit //funsion que se ejecuta al presionar refrescar

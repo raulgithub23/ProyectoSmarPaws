@@ -3,8 +3,7 @@ package com.example.smartpaws.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartpaws.data.local.pets.PetFactDao
-import com.example.smartpaws.data.local.pets.PetFactEntity
+import com.example.smartpaws.data.remote.pets.PetFact
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository
@@ -23,116 +22,116 @@ data class HomeAppointmentUiItem(
 
 // Estado de la pantalla Home
 data class HomeUiState(
-    val currentFact: PetFactEntity? = null, // Dato curioso actual (null si aun no se carga)
-    val upcomingAppointments: List<HomeAppointmentUiItem> = emptyList(), // Próximas citas del usuario
-    val isLoading: Boolean = false, // Indica si está cargando datos
-    val errorMsg: String? = null // Mensaje de error (null si no hay error)
+    val currentFact: PetFact? = null, // Usamos la nueva clase simple PetFact
+    val upcomingAppointments: List<HomeAppointmentUiItem> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMsg: String? = null
 )
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class) // Necesario para usar flatMapLatest
+
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(
-    private val repository: AppointmentRepository, // Repositorio para operaciones de citas
-    private val petFactDao: PetFactDao, // DAO para acceder a datos curiosos en la BD
-    private val authViewModel: AuthViewModel, // se recibe el authViewModel opara sacar la id del ususraio
+    private val repository: AppointmentRepository,
+    // private val petFactDao: PetFactDao, // ELIMINADO: Ya no existe DAO
+    private val authViewModel: AuthViewModel,
     private val petsRepository: PetsRepository,
     private val doctorRepository: DoctorRepository
 ) : ViewModel() {
 
-    private val _homeState = MutableStateFlow(HomeUiState()) // Estado privado mutable (solo este ViewModel puede modificarlo)
-    val homeState: StateFlow<HomeUiState> = _homeState // Estado público inmutable (la UI solo puede leerlo)
+    private val _homeState = MutableStateFlow(HomeUiState())
+    val homeState: StateFlow<HomeUiState> = _homeState
 
-    init { // Bloque init: se ejecuta automáticamente al crear el ViewModel
+    // Lista "quemada" (Hardcoded) de datos curiosos para reemplazar la BD local temporalmente
+    private val localFacts = listOf(
+        PetFact("Datos sobre gatos", "Los gatos duermen entre 13 y 16 horas al día.", "cat"),
+        PetFact("Datos sobre gatos", "Los gatos tienen 32 músculos en cada oreja.", "cat"),
+        PetFact("Datos sobre gatos", "El ronroneo de un gato puede reducir el estrés.", "cat"),
+        PetFact("Datos sobre perros", "El olfato de un perro es 10,000 veces más fuerte que el humano.", "dog"),
+        PetFact("Datos sobre perros", "La nariz de cada perro es única, como una huella dactilar.", "dog"),
+        PetFact("Datos sobre perros", "Los perros sudan a través de sus patas.", "dog")
+    )
+
+    init {
         loadHomeData()
     }
 
     private fun loadHomeData() {
-        viewModelScope.launch { // Activa el estado de carga
+        viewModelScope.launch {
             _homeState.update { it.copy(isLoading = true, errorMsg = null) }
 
-            try {
-                // Cargar datos curiosos
-                launch {
-                    petFactDao.getAllFacts().collect { allFacts -> // collect: escucha continuamente cambios en la tabla de datos curiosos
-                        val randomFact = allFacts.randomOrNull() // Selecciona un dato aleatorio de la lista
-                        _homeState.update { it.copy(currentFact = randomFact) }
+            // 1. Cargar Dato Curioso (Simulado localmente)
+            refreshFact()
+
+            // 2. Cargar citas OBSERVANDO el userId del AuthViewModel
+            authViewModel.login
+                .distinctUntilChangedBy { it.userId }
+                .collectLatest { loginState ->
+                    if (loginState.userId != null) {
+                        loadAppointmentsForUser(loginState.userId)
+                    } else {
+                        _homeState.update { it.copy(upcomingAppointments = emptyList(), isLoading = false) }
                     }
                 }
+        }
+    }
 
-                // Cargar citas OBSERVANDO el userId
-                launch {
-                    authViewModel.login
-                        .distinctUntilChangedBy { it.userId } // Solo reacciona cuando cambia el userId
-                        .collectLatest { loginState ->
-                            if (loginState.userId != null) {
-                                // Observa las citas en tiempo real para este usuario
-                                val result = repository.getUpcomingAppointmentsByUser(loginState.userId)
+    private suspend fun loadAppointmentsForUser(userId: Long) {
+        try {
+            val result = repository.getUpcomingAppointmentsByUser(userId)
 
-                                result.fold(
-                                    onSuccess = { dtos ->
-                                        // Mapeo de IDs a Nombres usando los otros repositorios
-                                        val uiItems = dtos.map { dto ->
-                                            val petName = if (dto.petId != null) {
-                                                petsRepository.getPetById(dto.petId).getOrNull()?.name ?: "Desconocido"
-                                            } else "Sin mascota"
+            result.fold(
+                onSuccess = { dtos ->
+                    // Mapeo de IDs a Nombres
+                    // Nota: Esto hace muchas llamadas de red en bucle (N+1 problem).
+                    // Idealmente el backend debería devolver el nombre del doctor y la mascota en la cita.
+                    // Pero por ahora lo mantenemos así para que funcione con tu lógica actual.
+                    val uiItems = dtos.map { dto ->
+                        // Obtener nombre de mascota
+                        val petName = if (dto.petId != null) {
+                            petsRepository.getPetById(dto.petId).getOrNull()?.name ?: "Desconocido"
+                        } else "Sin mascota"
 
-                                            val doctorObj = doctorRepository.getDoctorWithSchedules(dto.doctorId).getOrNull()
+                        // Obtener datos del doctor
+                        // CORRECCIÓN: getDoctorWithSchedules devuelve un Result<DoctorDto>
+                        val doctorDto = doctorRepository.getDoctorWithSchedules(dto.doctorId).getOrNull()
 
-                                            HomeAppointmentUiItem(
-                                                id = dto.id,
-                                                date = dto.date,
-                                                time = dto.time,
-                                                notes = dto.notes,
-                                                petName = petName,
-                                                doctorName = doctorObj?.doctor?.name ?: "Desconocido",
-                                                doctorSpecialty = doctorObj?.doctor?.specialty
-                                            )
-                                        }
+                        HomeAppointmentUiItem(
+                            id = dto.id,
+                            date = dto.date,
+                            time = dto.time,
+                            notes = dto.notes,
+                            petName = petName,
+                            // CORRECCIÓN: Accedemos directo a las propiedades del DTO, sin .doctor intermedio
+                            doctorName = doctorDto?.name ?: "Dr. Desconocido",
+                            doctorSpecialty = doctorDto?.specialty
+                        )
+                    }
 
-                                        _homeState.update {
-                                            it.copy(
-                                                upcomingAppointments = uiItems,
-                                                isLoading = false,
-                                                errorMsg = null
-                                            )
-                                        }
-                                    },
-                                    onFailure = { e ->
-                                        _homeState.update { it.copy(errorMsg = e.message) }
-                                    }
-                                )
-                            } else {
-                                // Si no hay usuario logueado, emite lista vacía
-                                _homeState.update { it.copy(upcomingAppointments = emptyList()) }
-                            }
-                        } // collect: recibe cada emisión del Flow y actualiza el estado
+                    _homeState.update {
+                        it.copy(
+                            upcomingAppointments = uiItems,
+                            isLoading = false,
+                            errorMsg = null
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _homeState.update {
+                        it.copy(isLoading = false, errorMsg = "Error cargando citas: ${e.message}")
+                    }
                 }
-            } catch (e: Exception) {  // Si cualquiera de las corrutinas falla, captura el error
-                _homeState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMsg = "Error al cargar datos: ${e.message}"
-                    )
-                }
+            )
+        } catch (e: Exception) {
+            _homeState.update {
+                it.copy(isLoading = false, errorMsg = "Error inesperado: ${e.message}")
             }
         }
     }
 
     fun refreshFact() {
-        viewModelScope.launch {
-            try {
-                petFactDao.getAllFacts().first().let { allFacts -> // first(): Obtiene SOLO la primera emisión del Flow y luego se desconecta
-                    // Es diferente a collect() que se queda escuchando continuamente
-                    val newFact = allFacts.randomOrNull()  // Selecciona un nuevo dato aleatorio
-                    Log.d("HomeViewModel", "Refrescando dato: ${newFact?.title}")
-                    _homeState.update { it.copy(currentFact = newFact) }
-                }
-            } catch (e: Exception) {
-                // Si falla al refrescar, registra el error y lo muestra al usuario
-                Log.e("HomeViewModel", "Error al refrescar: ${e.message}", e)
-                _homeState.update {
-                    it.copy(errorMsg = "Error al refrescar: ${e.message}")
-                }
-            }
-        }
+        // Lógica simple: sacar uno al azar de la lista local
+        val randomFact = localFacts.random()
+        _homeState.update { it.copy(currentFact = randomFact) }
+        Log.d("HomeViewModel", "Dato refrescado: ${randomFact.fact}")
     }
 
     fun clearError() {

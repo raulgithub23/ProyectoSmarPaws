@@ -2,6 +2,7 @@ package com.example.smartpaws.data.local.doctors
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.example.smartpaws.data.remote.dto.ScheduleDto
 
 data class DoctorWithSchedules(
     @Embedded val doctor: DoctorEntity,
@@ -9,5 +10,5 @@ data class DoctorWithSchedules(
         parentColumn = "id",
         entityColumn = "doctorId"
     )
-    val schedules: List<DoctorScheduleEntity>
+    val schedules: List<ScheduleDto>
 )
