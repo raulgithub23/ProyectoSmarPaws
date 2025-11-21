@@ -1,7 +1,5 @@
 package com.example.smartpaws.navigation
 
-import DoctorAppointmentsViewModelFactory
-import HistoryViewModel
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -26,6 +24,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.data.repository.PetsRepository
+import com.example.smartpaws.data.repository.UserRepository
 import com.example.smartpaws.ui.components.AppDrawer
 import com.example.smartpaws.ui.components.AppNavigationRail
 import com.example.smartpaws.ui.components.AppTopBar
@@ -45,9 +45,11 @@ import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
 import com.example.smartpaws.viewmodel.AuthViewModel
+import com.example.smartpaws.viewmodel.HistoryViewModel
 import com.example.smartpaws.viewmodel.HistoryViewModelFactory
 import com.example.smartpaws.viewmodel.HomeViewModel
 import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModel
+import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModelFactory
 
 import kotlinx.coroutines.launch
 
@@ -63,6 +65,8 @@ fun AppNavGraph(
     petsViewModel: PetsViewModel,
     homeViewModel: HomeViewModel,
     adminViewModel: AdminViewModel,
+    userRepository: UserRepository,
+    petsRepository: PetsRepository,
     historyViewModelFactory: HistoryViewModelFactory,
 ) {
 
@@ -71,7 +75,6 @@ fun AppNavGraph(
         startDestination = startDestination,
         modifier = Modifier.fillMaxSize()
     ) {
-        // ... (Login y Register iguales) ...
         composable(Route.Login.path) {
             LoginScreenVm(
                 vm = authViewModel,
@@ -109,7 +112,14 @@ fun AppNavGraph(
         }
 
         composable(Route.History.path) {
-            val historyViewModel: HistoryViewModel = viewModel(factory = historyViewModelFactory)
+            val historyViewModel: HistoryViewModel = viewModel(
+                factory = HistoryViewModelFactory(
+                    repository = appointmentRepository,
+                    petsRepository = petsRepository,
+                    doctorRepository = doctorRepository,
+                    authViewModel = authViewModel
+                )
+            )
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
                 HistoryScreen(viewModel = historyViewModel)
             }
@@ -149,12 +159,10 @@ fun AppNavGraph(
             }
         }
 
-        // --- NUEVA PANTALLA ---
         composable(Route.DoctorAppointments.path) {
             val loginState by authViewModel.login.collectAsState()
             val userProfile by authViewModel.userProfile.collectAsState()
 
-            // Solo cargamos si hay usuario, si no, manejo de error o login
             val userId = loginState.userId ?: 0L
             val userEmail = userProfile?.email ?: ""
 
@@ -162,6 +170,8 @@ fun AppNavGraph(
                 factory = DoctorAppointmentsViewModelFactory(
                     appointmentRepository = appointmentRepository,
                     doctorRepository = doctorRepository,
+                    userRepository = userRepository,
+                    petsRepository = petsRepository,
                     userId = userId,
                     userEmail = userEmail
                 )
@@ -194,15 +204,15 @@ private fun MainScaffoldWrapper(
     val goLogin = { navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } } }
     val goAdminPanel = { navController.navigate(Route.AdminPanel.path) { popUpTo(Route.Home.path) } }
 
-    // Nueva navegación
+    // navegación
     val goDoctorAppointments = { navController.navigate(Route.DoctorAppointments.path) { popUpTo(Route.Home.path) } }
 
     val onLogout = { authViewModel.logout(); goLogin() }
 
     val userProfile by authViewModel.userProfile.collectAsState()
     val isAdmin = userProfile?.rol == "ADMIN"
-    // Asumimos que si el rol es DOCTOR, puede ver esto.
-    // O si usamos el ADMIN como comodín. Ajusta esto según tu lógica de roles
+    // si el rol es DOCTOR, puede ver esto.
+    // O si usamos el ADMIN como todo
     val isDoctor = userProfile?.rol == "DOCTOR" || isAdmin
 
     val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
@@ -217,7 +227,6 @@ private fun MainScaffoldWrapper(
                     onUser = { scope.launch { drawerState.close() }; goUser() },
                     isAdmin = isAdmin,
                     onAdminPanel = { scope.launch { drawerState.close() }; goAdminPanel() },
-                    // Pasamos la info del doctor
                     isDoctor = isDoctor,
                     onDoctorAppointments = { scope.launch { drawerState.close() }; goDoctorAppointments() },
                     onLogout = { scope.launch { drawerState.close() }; onLogout() }

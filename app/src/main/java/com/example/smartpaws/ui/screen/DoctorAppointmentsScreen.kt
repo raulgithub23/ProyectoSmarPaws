@@ -19,8 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.smartpaws.data.local.doctors.DoctorAppointmentSummary
+import com.example.smartpaws.viewmodel.DoctorAppointmentUiItem
 import com.example.smartpaws.viewmodel.DoctorAppointmentsViewModel
+import androidx.compose.ui.text.font.FontStyle
 
 @Composable
 fun DoctorAppointmentsScreen(
@@ -87,7 +88,7 @@ fun DoctorAppointmentsScreen(
 
 @Composable
 fun DoctorAppointmentCard(
-    appointment: DoctorAppointmentSummary,
+    appointment: DoctorAppointmentUiItem, // USAMOS EL NUEVO MODELO UI
     primaryColor: Color
 ) {
     Card(
@@ -154,7 +155,7 @@ fun DoctorAppointmentCard(
                         text = "Nota: ${appointment.notes}",
                         modifier = Modifier.padding(8.dp),
                         fontSize = 13.sp,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        fontStyle = FontStyle.Italic
                     )
                 }
             }

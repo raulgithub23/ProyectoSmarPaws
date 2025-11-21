@@ -93,7 +93,7 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
     val userRepository = UserRepository()
     // ^ Repositorio que encapsula la lógica de login/registro contra Room.
 
-    val appointmentRepository = AppointmentRepository(appointmentDao)
+    val appointmentRepository = AppointmentRepository()
     val petsRepository = PetsRepository()
     val doctorRepository = DoctorRepository()
 
@@ -109,14 +109,18 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
 
     val historyViewModelFactory = HistoryViewModelFactory(
         repository = appointmentRepository,
-        authViewModel = authViewModel
+        authViewModel = authViewModel,
+        petsRepository = petsRepository,
+        doctorRepository = doctorRepository
     )
 
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(
             repository = appointmentRepository,
             petFactDao = petFactDao,
-            authViewModel = authViewModel
+            authViewModel = authViewModel,
+            petsRepository = petsRepository,
+            doctorRepository = doctorRepository
         )
     )
     // ^ Creamos los ViewModels con factory para inyectar los repositorios.
@@ -183,6 +187,8 @@ fun AppRoot(windowSizeClass: WindowSizeClass) { // Raíz de la app para separar 
                     homeViewModel = homeViewModel,
                     adminViewModel = adminViewModel,
                     startDestination = startDestination,
+                    userRepository = userRepository,
+                    petsRepository = petsRepository
                 )
                 // NOTA: Si tu AppNavGraph no tiene estos parámetros aún, basta con agregarlos:
                 // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel, historyViewModel: HistoryViewModel) { ... }

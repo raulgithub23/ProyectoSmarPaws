@@ -1,40 +1,72 @@
 package com.example.smartpaws.data.repository
 
-import com.example.smartpaws.data.local.appointment.AppointmentDao
-import com.example.smartpaws.data.local.appointment.AppointmentEntity
-import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
-import com.example.smartpaws.data.local.doctors.DoctorAppointmentSummary
+import com.example.smartpaws.data.remote.RemoteModule
+import com.example.smartpaws.data.remote.appointments.AppointmentApiService
+import com.example.smartpaws.data.remote.appointments.AppointmentRequestDto
+import com.example.smartpaws.data.remote.appointments.AppointmentResponseDto
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import retrofit2.HttpException
 
 class AppointmentRepository(
-    private val appointmentDao: AppointmentDao
+    private val api: AppointmentApiService =
+        RemoteModule.createAppointmentService(AppointmentApiService::class.java)
 ) {
 
-    // Flow para citas de un usuario específico
-    fun getAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
-        return appointmentDao.getAppointmentsByUser(userId)
-    }
 
-    fun getUpcomingAppointmentsByUser(userId: Long): Flow<List<AppointmentWithDetails>> {
-        return appointmentDao.getUpcomingAppointmentsByUser(userId)
-    }
-
-    suspend fun getAppointmentsByDoctorAndDate(doctorId: Long, date: String): List<AppointmentEntity> {
-        return appointmentDao.getAppointmentsByDoctorAndDate(doctorId, date)
-    }
-
-    suspend fun getAppointmentDetail(appointmentId: Long): Result<AppointmentWithDetails> {
-        return try {
-            val appointment = appointmentDao.getAppointmentById(appointmentId)
-            if (appointment != null) {
-                Result.success(appointment)
-            } else {
-                Result.failure(IllegalArgumentException("Cita no encontrada"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend fun getAppointmentsByUser(userId: Long): Result<List<AppointmentResponseDto>> = try {
+        val response = api.getAppointmentsByUser(userId)
+        if (response.isSuccessful) {
+            Result.success(response.body() ?: emptyList())
+        } else {
+            Result.failure(HttpException(response))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
+
+    fun observeAppointmentsByUser(userId: Long): Flow<Result<List<AppointmentResponseDto>>> = flow {
+        emit(getAppointmentsByUser(userId))
+    }
+
+    suspend fun getUpcomingAppointmentsByUser(userId: Long): Result<List<AppointmentResponseDto>> = try {
+        val response = api.getUpcomingAppointmentsByUser(userId)
+        if (response.isSuccessful) {
+            Result.success(response.body() ?: emptyList())
+        } else {
+            Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getAppointmentsByDoctorAndDate(doctorId: Long, date: String): Result<List<AppointmentResponseDto>> = try {
+        val response = api.getAppointmentsByDoctorAndDate(doctorId, date)
+        if (response.isSuccessful) {
+            Result.success(response.body() ?: emptyList())
+        } else {
+            Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+
+    suspend fun getAppointmentDetail(appointmentId: Long): Result<AppointmentResponseDto> = try {
+        val response = api.getAppointmentById(appointmentId)
+        if (response.isSuccessful && response.body() != null) {
+            Result.success(response.body()!!)
+        } else {
+            if (response.code() == 404) {
+                Result.failure(IllegalArgumentException("Cita no encontrada"))
+            } else {
+                Result.failure(HttpException(response))
+            }
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
 
     suspend fun createAppointment(
         userId: Long?,
@@ -43,34 +75,46 @@ class AppointmentRepository(
         date: String,
         time: String,
         notes: String?
-    ): Result<Long> {
-        return try {
-            val id = appointmentDao.insert(
-                AppointmentEntity(
-                    userId = userId,
-                    petId = petId,
-                    doctorId = doctorId,
-                    date = date,
-                    time = time,
-                    notes = notes
-                )
-            )
-            Result.success(id)
-        } catch (e: Exception) {
-            Result.failure(e)
+    ): Result<Long> = try {
+        val request = AppointmentRequestDto(
+            userId = userId,
+            petId = petId,
+            doctorId = doctorId,
+            date = date,
+            time = time,
+            notes = notes
+        )
+
+        val response = api.createAppointment(request)
+
+        if (response.isSuccessful && response.body() != null) {
+            Result.success(response.body()!!)
+        } else {
+            Result.failure(HttpException(response))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    suspend fun deleteAppointmentById(appointmentId: Long): Result<Unit> {
-        return try {
-            appointmentDao.deleteById(appointmentId)
+    suspend fun deleteAppointmentById(appointmentId: Long): Result<Unit> = try {
+        val response = api.deleteAppointment(appointmentId)
+        if (response.isSuccessful) {
             Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } else {
+            Result.failure(HttpException(response))
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    fun getAppointmentsForDoctor(doctorId: Long): Flow<List<DoctorAppointmentSummary>> {
-        return appointmentDao.getAppointmentsByDoctor(doctorId)
+    suspend fun getAppointmentsForDoctor(doctorId: Long): Result<List<AppointmentResponseDto>> = try {
+        val response = api.getAppointmentsByDoctor(doctorId)
+        if (response.isSuccessful) {
+            Result.success(response.body() ?: emptyList())
+        } else {
+            Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 }

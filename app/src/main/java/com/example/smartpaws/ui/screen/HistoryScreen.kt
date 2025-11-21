@@ -1,6 +1,5 @@
 package com.example.smartpaws.ui.screen
 
-import HistoryViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,16 +35,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.ui.theme.LightSecondary
 import androidx.compose.animation.animateContentSize
 import androidx.compose.material3.HorizontalDivider
 import com.example.smartpaws.ui.theme.LightBackground
+import com.example.smartpaws.viewmodel.HistoryAppointmentUiItem
+import com.example.smartpaws.viewmodel.HistoryViewModel
 
 @Composable
 fun HistoryScreen(
-    viewModel: HistoryViewModel //parametro que se conecta con viewmodel
+    viewModel: HistoryViewModel
 ) {
     val bg = LightSecondary
     val cardColor = LightBackground
@@ -70,16 +70,16 @@ fun HistoryScreen(
                 color = textColor
             )
 
-            if (state.appointments.isEmpty()) { //Ester if captura si tuvo alguno cita con la mascota, si no printea lo de abajo
+            if (state.appointments.isEmpty()) {
                 Text(
                     text = "Aún no tienes citas en el historial",
                     color = textColor
                 )
             } else {
-                LazyColumn(//el lazy column solo va a crear y dibujar elementos que caigan en la pantalla en vez de cargar todos los datos
+                LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(state.appointments) { appointment -> //se itera sobre la lista de citas pasdas y la añade a la carta
+                    items(state.appointments) { appointment ->
                         HistoryCard(
                             appointment = appointment,
                             cardColor = cardColor,
@@ -94,7 +94,7 @@ fun HistoryScreen(
 
 @Composable
 fun HistoryCard(
-    appointment: AppointmentWithDetails,
+    appointment: HistoryAppointmentUiItem,
     cardColor: Color,
     textColor: Color
 ) {

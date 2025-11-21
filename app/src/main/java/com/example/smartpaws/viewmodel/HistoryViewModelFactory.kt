@@ -1,19 +1,22 @@
 package com.example.smartpaws.viewmodel
 
-import HistoryViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.smartpaws.data.repository.AppointmentRepository
+import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.data.repository.PetsRepository
 
 class HistoryViewModelFactory(
-    private val repository: AppointmentRepository, // Repositorio para acceder a datos de citas
-    private val authViewModel: AuthViewModel //para obtener la id dle user
-) : ViewModelProvider.Factory {  // Hereda de Factory
+    private val repository: AppointmentRepository,
+    private val petsRepository: PetsRepository,
+    private val doctorRepository: DoctorRepository,
+    private val authViewModel: AuthViewModel
+) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) { // ¿modelClass es o puede ser asignado a HistoryViewModel?
-            return HistoryViewModel(repository, authViewModel) as T //y aca tabien
+        if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) {
+            return HistoryViewModel(repository, petsRepository, doctorRepository, authViewModel) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

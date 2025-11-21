@@ -4,8 +4,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import com.example.smartpaws.data.remote.appointments.AppointmentResponseDto
 import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
@@ -47,7 +47,8 @@ class AppointmentViewModel(
         viewModelScope.launch {
             // Observa las citas del usuario
             if (userId != null) {
-                repository.getUpcomingAppointmentsByUser(userId).collect { appointments ->
+                val result = repository.getUpcomingAppointmentsByUser(userId)
+                result.onSuccess { appointments ->
                     _uiState.update {
                         it.copy(scheduledAppointments = appointments)
                     }
@@ -141,9 +142,10 @@ class AppointmentViewModel(
             val allSlots = generateTimeSlots(schedule.startTime, schedule.endTime, date)
 
             // Obtenemos las citas que YA existen para ese doctor en esa fecha
+            val result = repository.getAppointmentsByDoctorAndDate(doctor.doctor.id, date.toString())
+
             val occupiedTimes = try {
-                val existingAppointments = repository.getAppointmentsByDoctorAndDate(doctor.doctor.id, date.toString())
-                existingAppointments.map { it.time }
+                result.getOrDefault(emptyList()).map { it.time }
             } catch (e: Exception) {
                 emptyList<String>()
             }
@@ -220,15 +222,15 @@ class AppointmentViewModel(
             _uiState.update { it.copy(isSubmitting = true, errorMsg = null) }
 
             // verificar horario sigue disponible
-            val isTimeTaken = try {
-                val existing = repository.getAppointmentsByDoctorAndDate(
-                    state.selectedDoctor.doctor.id,
-                    state.selectedDate.toString()
-                )
-                existing.any { it.time == state.selectedTime }
-            } catch (e: Exception) {
-                false
-            }
+            val checkResult = repository.getAppointmentsByDoctorAndDate(
+                state.selectedDoctor.doctor.id,
+                state.selectedDate.toString()
+            )
+
+            val isTimeTaken = checkResult.fold(
+                onSuccess = { existing -> existing.any { it.time == state.selectedTime } },
+                onFailure = { false }
+            )
 
             if (isTimeTaken) {
                 _uiState.update {
@@ -292,8 +294,8 @@ class AppointmentViewModel(
 
     fun deleteAppointment(appointmentId: Long) {
         viewModelScope.launch {
-            try {
-                repository.deleteAppointmentById(appointmentId)
+            val result = repository.deleteAppointmentById(appointmentId)
+            result.onSuccess {
                 _uiState.update {
                     it.copy(
                         scheduledAppointments = it.scheduledAppointments.filterNot { a ->
@@ -301,7 +303,7 @@ class AppointmentViewModel(
                         }
                     )
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 _uiState.update {
                     it.copy(errorMsg = "Error al eliminar cita: ${e.message}")
                 }
@@ -313,7 +315,7 @@ class AppointmentViewModel(
 /* Data class que representa estado de la ui appointments*/
 
 data class AppointmentUiState(
-    val scheduledAppointments : List<AppointmentWithDetails> = emptyList(),
+    val scheduledAppointments : List<AppointmentResponseDto> = emptyList(),
     val userPets: List<PetsDto> = emptyList(),
     val selectedPet: PetsDto? = null,
     val selectedDate: LocalDate? = null,

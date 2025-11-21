@@ -60,15 +60,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.doctors.DoctorWithSchedules
+import com.example.smartpaws.data.remote.appointments.AppointmentResponseDto
 import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.YearMonth
 import kotlinx.datetime.*
 
-
-//SCREEN PARA CREAR UN CITA PARA LA MASCOTA
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppointmentScreen(
@@ -78,9 +76,10 @@ fun AppointmentScreen(
     val green = Color(0xFF00C853)
     val lightGreen = Color(0xFFE8F5E9)
 
-    val uiState by viewModel.uiState.collectAsState() // Observa el estado del ViewModel
-    var showSuccessDialog by remember { mutableStateOf(false) } // Controla diálogo de éxito
-    var appointmentToDelete by remember { mutableStateOf<AppointmentWithDetails?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+    var showSuccessDialog by remember { mutableStateOf(false) }
+
+    var appointmentToDelete by remember { mutableStateOf<AppointmentResponseDto?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
 
@@ -227,6 +226,8 @@ fun AppointmentScreen(
 
             ScheduledAppointmentsList(
                 appointments = uiState.scheduledAppointments,
+                pets = uiState.userPets,
+                doctors = uiState.doctors,
                 primaryColor = green,
                 lightColor = lightGreen,
                 onDeleteClick = { appointment ->
@@ -715,6 +716,7 @@ fun DoctorCard(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarView(
     yearMonth: YearMonth?,
@@ -880,30 +882,14 @@ fun TimeSlotButton(
     }
 }
 
-fun YearMonth.monthName(): String {
-    return when (month) {
-        1 -> "Enero"
-        2 -> "Febrero"
-        3 -> "Marzo"
-        4 -> "Abril"
-        5 -> "Mayo"
-        6 -> "Junio"
-        7 -> "Julio"
-        8 -> "Agosto"
-        9 -> "Septiembre"
-        10 -> "Octubre"
-        11 -> "Noviembre"
-        12 -> "Diciembre"
-        else -> ""
-    }
-}
-
 @Composable
 fun ScheduledAppointmentsList(
-    appointments: List<AppointmentWithDetails>,
+    appointments: List<AppointmentResponseDto>,
+    pets: List<PetsDto>,
+    doctors: List<DoctorWithSchedules>,
     primaryColor: Color,
     lightColor: Color,
-    onDeleteClick: (AppointmentWithDetails) -> Unit
+    onDeleteClick: (AppointmentResponseDto) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -912,6 +898,8 @@ fun ScheduledAppointmentsList(
         appointments.take(3).forEach { appointment ->
             ScheduledAppointmentCard(
                 appointment = appointment,
+                pets = pets,
+                doctors = doctors,
                 primaryColor = primaryColor,
                 lightColor = lightColor,
                 onDeleteClick = { onDeleteClick(appointment)}
@@ -922,11 +910,18 @@ fun ScheduledAppointmentsList(
 
 @Composable
 fun ScheduledAppointmentCard(
-    appointment: AppointmentWithDetails,
+    appointment: AppointmentResponseDto,
+    pets: List<PetsDto>,
+    doctors: List<DoctorWithSchedules>,
     primaryColor: Color,
     lightColor: Color,
     onDeleteClick: () -> Unit
 ) {
+    val petName = pets.find { it.id == appointment.petId }?.name ?: "Mascota desconocida"
+    val doctorObj = doctors.find { it.doctor.id == appointment.doctorId }?.doctor
+    val doctorName = doctorObj?.name ?: "Doctor desconocido"
+    val doctorSpecialty = doctorObj?.specialty
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -952,13 +947,11 @@ fun ScheduledAppointmentCard(
                         modifier = Modifier.padding(end = 6.dp)
                     )
                     Text(
-                        text = appointment.petName,
+                        text = petName,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
-
-
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -972,12 +965,12 @@ fun ScheduledAppointmentCard(
                     )
                     Column {
                         Text(
-                            text = appointment.doctorName,
+                            text = doctorName,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.Black
                         )
-                        appointment.doctorSpecialty?.let { specialty ->
+                        doctorSpecialty?.let { specialty ->
                             Text(
                                 text = specialty,
                                 fontSize = 12.sp,
@@ -1036,7 +1029,7 @@ fun ScheduledAppointmentCard(
                 }
             }
 
-            // Lado derecho: Badge de estado
+            // Badge de estado
             IconButton(onClick = onDeleteClick) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -1063,4 +1056,20 @@ fun formatDate(dateString: String): String {
         dateString
     }
 }
-
+fun YearMonth.monthName(): String {
+    return when (month) {
+        1 -> "Enero"
+        2 -> "Febrero"
+        3 -> "Marzo"
+        4 -> "Abril"
+        5 -> "Mayo"
+        6 -> "Junio"
+        7 -> "Julio"
+        8 -> "Agosto"
+        9 -> "Septiembre"
+        10 -> "Octubre"
+        11 -> "Noviembre"
+        12 -> "Diciembre"
+        else -> ""
+    }
+}

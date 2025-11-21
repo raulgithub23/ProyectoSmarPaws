@@ -1,19 +1,33 @@
 package com.example.smartpaws.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.smartpaws.data.local.doctors.DoctorAppointmentSummary
+import com.example.smartpaws.data.remote.appointments.AppointmentResponseDto
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.data.repository.PetsRepository
+import com.example.smartpaws.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class DoctorAppointmentUiItem(
+    val id: Long,
+    val date: String,
+    val time: String,
+    val notes: String?,
+    val petId: Long?,
+    val petName: String,
+    val petEspecie: String,
+    val ownerId: Long?,
+    val ownerName: String,
+    val ownerPhone: String?
+)
+
 data class DoctorAppointmentsUiState(
-    val appointments: List<DoctorAppointmentSummary> = emptyList(),
+    val appointments: List<DoctorAppointmentUiItem> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
     val doctorName: String = ""
@@ -22,6 +36,8 @@ data class DoctorAppointmentsUiState(
 class DoctorAppointmentsViewModel(
     private val appointmentRepository: AppointmentRepository,
     private val doctorRepository: DoctorRepository,
+    private val petRepository: PetsRepository,
+    private val userRepository: UserRepository,
     private val userId: Long,
     private val userEmail: String
 ) : ViewModel() {
@@ -38,37 +54,68 @@ class DoctorAppointmentsViewModel(
             _uiState.update { it.copy(isLoading = true) }
 
             try {
-                val result = doctorRepository.getDoctorByEmail(userEmail)
+                val doctorResult = doctorRepository.getDoctorByEmail(userEmail)
 
-                if (result.isSuccess) {
-                    val doctorWithSchedules = result.getOrNull()!!
+                if (doctorResult.isSuccess) {
+                    val doctorWithSchedules = doctorResult.getOrNull()!!
                     _uiState.update { it.copy(doctorName = doctorWithSchedules.doctor.name) }
 
-                    appointmentRepository.getAppointmentsForDoctor(doctorWithSchedules.doctor.id)
-                        .collect { appointments ->
+                    val appointmentsResult = appointmentRepository.getAppointmentsForDoctor(doctorWithSchedules.doctor.id)
+
+                    appointmentsResult.fold(
+                        onSuccess = { dtoList ->
+                            val uiItems = dtoList.map { dto ->
+                                mapDtoToUiItem(dto)
+                            }
+
                             _uiState.update {
                                 it.copy(
-                                    appointments = appointments,
-                                    isLoading = false
+                                    appointments = uiItems,
+                                    isLoading = false,
+                                    error = null
                                 )
                             }
+                        },
+                        onFailure = { e ->
+                            _uiState.update {
+                                it.copy(isLoading = false, error = "Error obteniendo citas: ${e.message}")
+                            }
                         }
+                    )
+
                 } else {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = "No se encontró un perfil de doctor asociado."
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, error = "No se encontró perfil de doctor.") }
                 }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = "Error al cargar citas: ${e.message}"
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false, error = "Error general: ${e.message}") }
             }
         }
+    }
+
+    private suspend fun mapDtoToUiItem(dto: AppointmentResponseDto): DoctorAppointmentUiItem {
+        val petDto = if (dto.petId != null) {
+            petRepository.getPetById(dto.petId).getOrNull()
+        } else null
+
+        val userEntity = if (dto.userId != null) {
+            try {
+                userRepository.getUserById(dto.userId)
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+
+        return DoctorAppointmentUiItem(
+            id = dto.id,
+            date = dto.date,
+            time = dto.time,
+            notes = dto.notes,
+            petId = dto.petId,
+            petName = petDto?.name ?: "Mascota #${dto.petId ?: "?"}",
+            petEspecie = petDto?.especie ?: "Desconocido",
+            ownerId = dto.userId,
+            ownerName = userEntity?.name ?: "Dueño #${dto.userId ?: "?"}",
+            ownerPhone = userEntity?.phone ?: "Sin teléfono"
+        )
     }
 }

@@ -17,11 +17,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.smartpaws.R
-import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.pets.PetFactEntity
 import com.example.smartpaws.ui.theme.DarkGreen
 import com.example.smartpaws.ui.theme.LightBackground
 import com.example.smartpaws.ui.theme.LightSecondary
+import com.example.smartpaws.viewmodel.HomeAppointmentUiItem
 import com.example.smartpaws.viewmodel.HomeViewModel
 
 @Composable
@@ -214,7 +214,7 @@ fun PetFactCard(
 // Tarjeta de cita (anuncio)
 @Composable
 fun AppointmentCard(
-    appointment: AppointmentWithDetails,
+    appointment: HomeAppointmentUiItem,
     cardColor: Color,
     textColor: Color
 ) {

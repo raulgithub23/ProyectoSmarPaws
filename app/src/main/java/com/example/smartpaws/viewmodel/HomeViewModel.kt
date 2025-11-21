@@ -3,18 +3,28 @@ package com.example.smartpaws.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartpaws.data.local.appointment.AppointmentWithDetails
 import com.example.smartpaws.data.local.pets.PetFactDao
 import com.example.smartpaws.data.local.pets.PetFactEntity
 import com.example.smartpaws.data.repository.AppointmentRepository
+import com.example.smartpaws.data.repository.DoctorRepository
+import com.example.smartpaws.data.repository.PetsRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+data class HomeAppointmentUiItem(
+    val id: Long,
+    val date: String,
+    val time: String,
+    val notes: String?,
+    val petName: String,
+    val doctorName: String,
+    val doctorSpecialty: String?
+)
 
 // Estado de la pantalla Home
 data class HomeUiState(
     val currentFact: PetFactEntity? = null, // Dato curioso actual (null si aun no se carga)
-    val upcomingAppointments: List<AppointmentWithDetails> = emptyList(), // Próximas citas del usuario
+    val upcomingAppointments: List<HomeAppointmentUiItem> = emptyList(), // Próximas citas del usuario
     val isLoading: Boolean = false, // Indica si está cargando datos
     val errorMsg: String? = null // Mensaje de error (null si no hay error)
 )
@@ -22,8 +32,9 @@ data class HomeUiState(
 class HomeViewModel(
     private val repository: AppointmentRepository, // Repositorio para operaciones de citas
     private val petFactDao: PetFactDao, // DAO para acceder a datos curiosos en la BD
-    private val authViewModel: AuthViewModel // se recibe el authViewModel opara sacar la id del ususraio
-
+    private val authViewModel: AuthViewModel, // se recibe el authViewModel opara sacar la id del ususraio
+    private val petsRepository: PetsRepository,
+    private val doctorRepository: DoctorRepository
 ) : ViewModel() {
 
     private val _homeState = MutableStateFlow(HomeUiState()) // Estado privado mutable (solo este ViewModel puede modificarlo)
@@ -50,24 +61,49 @@ class HomeViewModel(
                 launch {
                     authViewModel.login
                         .distinctUntilChangedBy { it.userId } // Solo reacciona cuando cambia el userId
-                        .flatMapLatest { loginState ->
+                        .collectLatest { loginState ->
                             if (loginState.userId != null) {
                                 // Observa las citas en tiempo real para este usuario
-                                repository.getUpcomingAppointmentsByUser(loginState.userId)
+                                val result = repository.getUpcomingAppointmentsByUser(loginState.userId)
+
+                                result.fold(
+                                    onSuccess = { dtos ->
+                                        // Mapeo de IDs a Nombres usando los otros repositorios
+                                        val uiItems = dtos.map { dto ->
+                                            val petName = if (dto.petId != null) {
+                                                petsRepository.getPetById(dto.petId).getOrNull()?.name ?: "Desconocido"
+                                            } else "Sin mascota"
+
+                                            val doctorObj = doctorRepository.getDoctorWithSchedules(dto.doctorId).getOrNull()
+
+                                            HomeAppointmentUiItem(
+                                                id = dto.id,
+                                                date = dto.date,
+                                                time = dto.time,
+                                                notes = dto.notes,
+                                                petName = petName,
+                                                doctorName = doctorObj?.doctor?.name ?: "Desconocido",
+                                                doctorSpecialty = doctorObj?.doctor?.specialty
+                                            )
+                                        }
+
+                                        _homeState.update {
+                                            it.copy(
+                                                upcomingAppointments = uiItems,
+                                                isLoading = false,
+                                                errorMsg = null
+                                            )
+                                        }
+                                    },
+                                    onFailure = { e ->
+                                        _homeState.update { it.copy(errorMsg = e.message) }
+                                    }
+                                )
                             } else {
                                 // Si no hay usuario logueado, emite lista vacía
-                                flowOf(emptyList())
+                                _homeState.update { it.copy(upcomingAppointments = emptyList()) }
                             }
-                        }
-                        .collect { appointments -> // collect: recibe cada emisión del Flow y actualiza el estado
-                            _homeState.update {
-                                it.copy(
-                                    upcomingAppointments = appointments,
-                                    isLoading = false,
-                                    errorMsg = null
-                                )
-                            }
-                        }
+                        } // collect: recibe cada emisión del Flow y actualiza el estado
                 }
             } catch (e: Exception) {  // Si cualquiera de las corrutinas falla, captura el error
                 _homeState.update {
@@ -84,7 +120,7 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 petFactDao.getAllFacts().first().let { allFacts -> // first(): Obtiene SOLO la primera emisión del Flow y luego se desconecta
-                                                                     // Es diferente a collect() que se queda escuchando continuamente
+                    // Es diferente a collect() que se queda escuchando continuamente
                     val newFact = allFacts.randomOrNull()  // Selecciona un nuevo dato aleatorio
                     Log.d("HomeViewModel", "Refrescando dato: ${newFact?.title}")
                     _homeState.update { it.copy(currentFact = newFact) }
