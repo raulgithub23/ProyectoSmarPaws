@@ -99,11 +99,7 @@ class DoctorAppointmentsViewModel(
         } else null
 
         val userDto = if (dto.userId != null) {
-            try {
-                userRepository.getUserById(dto.userId)
-            } catch (e: Exception) {
-                null
-            }
+            userRepository.getUserById(dto.userId).getOrNull()
         } else null
 
         return DoctorAppointmentUiItem(
