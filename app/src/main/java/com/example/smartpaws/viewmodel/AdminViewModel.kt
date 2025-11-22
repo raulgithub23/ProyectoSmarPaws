@@ -7,7 +7,7 @@ import com.example.smartpaws.data.remote.dto.ScheduleDto
 import com.example.smartpaws.data.remote.dto.UserDto
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.UserRepository
-// import com.example.smartpaws.data.repository.UserRepository // Asegúrate de tener este repo
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,15 +33,13 @@ data class AdminStats(
 )
 
 class AdminViewModel(
-    private val doctorRepository: DoctorRepository,
-    userRepository: UserRepository,
-    // private val userRepository: UserRepository // Inyecta tu repo de usuarios aquí
+    private val userRepository: UserRepository,
+    private val doctorRepository: DoctorRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
     val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
 
-    // Cache local para filtrar sin volver a llamar a la API
     private var allUsersCache: List<UserDto> = emptyList()
 
     init {
@@ -50,30 +48,46 @@ class AdminViewModel(
 
     fun loadAllData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+
             try {
-                // 1. Cargar Doctores (DTOs)
-                val doctors = doctorRepository.getAllDoctorsWithSchedules()
+                // Cargar datos en paralelo
+                val usersDeferred = async { userRepository.getAllUsers() }
+                val doctorsDeferred = async { doctorRepository.getAllDoctorsWithSchedules() }
 
-                // 2. Cargar Usuarios (Simulado por ahora si no tienes el repo listo)
-                // val users = userRepository.getAllUsers()
-                val users = emptyList<UserDto>() // TODO: Reemplazar con llamada real
+                val usersResult = usersDeferred.await()
+                val doctors = doctorsDeferred.await()
 
-                allUsersCache = users
+                usersResult.fold(
+                    onSuccess = { users ->
+                        allUsersCache = users
+                        val stats = calculateStats(users, doctors)
 
-                // Calcular estadísticas
-                val stats = calculateStats(users, doctors)
-
+                        _uiState.update {
+                            it.copy(
+                                users = users,
+                                doctors = doctors,
+                                stats = stats,
+                                isLoading = false
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMsg = "Error al cargar datos: ${error.message}"
+                            )
+                        }
+                    }
+                )
+            } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        doctors = doctors,
-                        users = users,
-                        stats = stats
+                        errorMsg = "Error al cargar datos: ${e.message}"
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMsg = "Error cargando datos: ${e.message}") }
             }
         }
     }
@@ -82,78 +96,235 @@ class AdminViewModel(
         return AdminStats(
             totalUsers = users.size,
             adminCount = users.count { it.rol == "ADMIN" },
-            doctorCount = doctors.size, // O users.count { it.rol == "DOCTOR" }
+            doctorCount = doctors.size,
             userCount = users.count { it.rol == "USER" }
         )
     }
 
-    // --- Filtros ---
+    // --- FILTROS ---
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        applyFilters()
+
+        if (query.isBlank()) {
+            loadAllData()
+        } else {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
+
+                val result = userRepository.searchUsers(query)
+                result.fold(
+                    onSuccess = { users ->
+                        _uiState.update { it.copy(users = users, isLoading = false) }
+                    },
+                    onFailure = { error ->
+                        _uiState.update {
+                            it.copy(
+                                errorMsg = "Error en la búsqueda: ${error.message}",
+                                isLoading = false
+                            )
+                        }
+                    }
+                )
+            }
+        }
     }
 
     fun filterByRole(role: String?) {
         _uiState.update { it.copy(selectedRole = role) }
-        applyFilters()
-    }
 
-    private fun applyFilters() {
-        val query = _uiState.value.searchQuery.lowercase()
-        val role = _uiState.value.selectedRole
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
 
-        val filteredUsers = allUsersCache.filter { user ->
-            val matchesSearch = user.name.lowercase().contains(query) || user.email.lowercase().contains(query)
-            val matchesRole = role == null || user.rol == role
-            matchesSearch && matchesRole
+            val result = if (role == null) {
+                userRepository.getAllUsers()
+            } else {
+                userRepository.getUsersByRole(role)
+            }
+
+            result.fold(
+                onSuccess = { users ->
+                    _uiState.update { it.copy(users = users, isLoading = false) }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            errorMsg = "Error al filtrar: ${error.message}",
+                            isLoading = false
+                        )
+                    }
+                }
+            )
         }
-
-        _uiState.update { it.copy(users = filteredUsers) }
     }
 
-    // --- Acciones de Doctor ---
+    // --- ACCIONES DE DOCTOR ---
 
     fun createDoctor(name: String, email: String, phone: String, pass: String, specialty: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            // Lógica para crear doctor usando doctorRepository.createDoctorWithSchedules...
-            // Al finalizar, llamar a loadAllData()
-            _uiState.update { it.copy(isLoading = false, successMsg = "Doctor creado (Simulado)") }
+            _uiState.update { it.copy(isLoading = true, errorMsg = null, successMsg = null) }
+
+            // 1. Registrar usuario
+            val registerResult = userRepository.register(name, email, phone, pass)
+
+            if (registerResult.isFailure) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = registerResult.exceptionOrNull()?.message ?: "Error al registrar usuario"
+                    )
+                }
+                return@launch
+            }
+
+            val newUserId = registerResult.getOrNull()
+            if (newUserId == null) {
+                _uiState.update { it.copy(isLoading = false, errorMsg = "Error al obtener ID de nuevo usuario") }
+                return@launch
+            }
+
+            // 2. Actualizar rol a DOCTOR
+            val updateResult = userRepository.updateUserRole(newUserId, "DOCTOR")
+            if (updateResult.isFailure) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = updateResult.exceptionOrNull()?.message ?: "Error al asignar rol de Doctor"
+                    )
+                }
+                loadAllData()
+                return@launch
+            }
+
+            // 3. Crear perfil de doctor
+            val doctorProfileResult = doctorRepository.createDoctorWithSchedules(
+                name = name,
+                specialty = specialty,
+                email = email,
+                phone = phone,
+                schedules = emptyList()
+            )
+
+            if (doctorProfileResult.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMsg = "Doctor (Usuario y Perfil) creado correctamente"
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = doctorProfileResult.exceptionOrNull()?.message
+                            ?: "Usuario creado, pero falló al crear perfil de doctor"
+                    )
+                }
+            }
+            loadAllData()
         }
     }
 
     fun updateDoctorSchedules(doctorId: Long, newSchedules: List<ScheduleDto>) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, errorMsg = null, successMsg = null) }
+
             val result = doctorRepository.updateSchedules(doctorId, newSchedules)
-            result.onSuccess {
+
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMsg = "Horario actualizado correctamente"
+                    )
+                }
                 loadAllData()
-                _uiState.update { it.copy(successMsg = "Horarios actualizados") }
-            }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, errorMsg = e.message) }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al actualizar horario"
+                    )
+                }
             }
         }
     }
 
     fun deleteDoctorProfile(doctorId: Long) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+
             val result = doctorRepository.deleteDoctor(doctorId)
-            result.onSuccess {
+
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMsg = "Perfil de doctor eliminado"
+                    )
+                }
                 loadAllData()
-                _uiState.update { it.copy(successMsg = "Perfil eliminado") }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al eliminar perfil"
+                    )
+                }
             }
         }
     }
 
-    // --- Acciones de Usuario ---
-
-    fun deleteUser(userId: Long) {
-        // Llama a userRepository.deleteUser(userId)
-    }
+    // --- ACCIONES DE USUARIO ---
 
     fun updateUserRole(userId: Long, newRole: String) {
-        // Llama a userRepository.updateRole(userId, newRole)
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMsg = null, successMsg = null) }
+
+            val result = userRepository.updateUserRole(userId, newRole)
+
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMsg = "Rol actualizado correctamente"
+                    )
+                }
+                loadAllData()
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al actualizar rol"
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteUser(userId: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+
+            val result = userRepository.deleteUser(userId)
+
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMsg = "Usuario eliminado"
+                    )
+                }
+                loadAllData()
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al eliminar usuario"
+                    )
+                }
+            }
+        }
     }
 
     fun clearMessages() {
