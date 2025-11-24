@@ -38,7 +38,6 @@ class UserRepository(
                 password = password
             )
 
-            // ⭐ CAMBIO: register devuelve UserDto, no RegisterResponse
             val response = api.register(request)
             Result.success(response.id)
 
@@ -95,7 +94,6 @@ class UserRepository(
 
     suspend fun updateUserRole(userId: Long, newRole: String): Result<Unit> {
         return try {
-            // ⭐ CAMBIO: updateUserRole devuelve UserDto, pero lo ignoramos
             api.updateUserRole(userId, UpdateRoleRequest(newRole), "ADMIN")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -128,7 +126,6 @@ class UserRepository(
         }
     }
 
-    // Se agrega este nuevo método
     suspend fun updateProfileImage(userId: Long, imagePath: String): Result<Unit> {
         return try {
             val request = UpdateImageRequest(imagePath)

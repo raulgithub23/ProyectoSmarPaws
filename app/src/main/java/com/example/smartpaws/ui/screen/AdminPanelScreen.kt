@@ -30,7 +30,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.smartpaws.data.remote.dto.DoctorDto
 import com.example.smartpaws.data.remote.dto.ScheduleDto
-import com.example.smartpaws.data.remote.dto.UserDto // Asumiendo que creaste este DTO para usuarios
+import com.example.smartpaws.data.remote.dto.UserDto
 import com.example.smartpaws.domain.validation.validateEmail
 import com.example.smartpaws.domain.validation.validateNameLettersOnly
 import com.example.smartpaws.domain.validation.validateNotEmpty
@@ -195,19 +195,17 @@ fun AdminPanelScreen(viewModel: AdminViewModel) {
 fun UsersTabContent(
     uiState: AdminUiState,
     viewModel: AdminViewModel,
-    onChangeRoleClick: (UserDto) -> Unit, // CAMBIO: UserDto
-    onDeleteClick: (UserDto) -> Unit // CAMBIO: UserDto
+    onChangeRoleClick: (UserDto) -> Unit,
+    onDeleteClick: (UserDto) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. Tarjeta de Estadísticas
         Spacer(modifier = Modifier.height(16.dp))
         AdminStatsCard(stats = uiState.stats)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 2. Controles de Búsqueda y Filtro
         UserListControls(
             searchQuery = uiState.searchQuery,
             selectedRole = uiState.selectedRole,
@@ -216,12 +214,10 @@ fun UsersTabContent(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 3. Indicador de Carga
         if (uiState.isLoading) {
             CircularProgressIndicator()
         }
 
-        // 4. Lista de Usuarios
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -241,8 +237,8 @@ fun UsersTabContent(
 @Composable
 fun DoctorsTabContent(
     uiState: AdminUiState,
-    onEditSchedulesClick: (DoctorDto) -> Unit, // CAMBIO: DoctorDto
-    onDeleteProfileClick: (DoctorDto) -> Unit  // CAMBIO: DoctorDto
+    onEditSchedulesClick: (DoctorDto) -> Unit,
+    onDeleteProfileClick: (DoctorDto) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -258,12 +254,10 @@ fun DoctorsTabContent(
             Text("No hay perfiles de doctor creados.")
         }
 
-        // Lista de Doctores
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // CAMBIO: uiState.doctors ahora es List<DoctorDto>
             items(uiState.doctors, key = { it.id }) { doctor ->
                 DoctorListItem(
                     doctor = doctor,
@@ -369,7 +363,7 @@ fun UserListControls(
 
 @Composable
 fun UserListItem(
-    user: UserDto, // CAMBIO: UserDto
+    user: UserDto,
     onChangeRoleClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -386,7 +380,6 @@ fun UserListItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(user.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("Email: ${user.email}", style = MaterialTheme.typography.bodyMedium)
-                // Verificamos nulos por si acaso en el DTO
                 Text("Tel: ${user.phone ?: "Sin teléfono"}", style = MaterialTheme.typography.bodySmall)
                 Text(
                     "Rol: ${user.rol}",
@@ -553,7 +546,7 @@ fun CreateDoctorDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    // 3. Validar TODO al hacer clic en crear
+                    // Validar TODO al hacer clic en crear
                     val vName = validateNameLettersOnly(name)
                     val vEmail = validateEmail(email)
                     val vPhone = validatePhoneDigitsOnly(phone)
@@ -590,7 +583,7 @@ fun CreateDoctorDialog(
 
 @Composable
 fun DoctorListItem(
-    doctor: DoctorDto, // CAMBIO: DoctorDto (ya trae los horarios dentro)
+    doctor: DoctorDto,
     onEditSchedules: () -> Unit,
     onDeleteProfile: () -> Unit
 ) {
@@ -636,15 +629,13 @@ fun DoctorListItem(
     }
 }
 
-// --- NUEVO: Diálogo para gestionar horarios ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageScheduleDialog(
-    doctor: DoctorDto, // CAMBIO: Recibe el DTO completo
+    doctor: DoctorDto,
     onDismiss: () -> Unit,
     onConfirm: (doctorId: Long, newSchedules: List<ScheduleDto>) -> Unit
 ) {
-    // CAMBIO: Usamos ScheduleDto. MutableStateListOf de ScheduleDto.
     val schedules = remember { mutableStateListOf<ScheduleDto>().apply {
         addAll(doctor.schedules)
     }}
@@ -661,7 +652,6 @@ fun ManageScheduleDialog(
         title = { Text("Gestionar Horarios de ${doctor.name}") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // --- Sección para añadir nuevos horarios ---
                 Text("Añadir nuevo horario:", style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -709,8 +699,6 @@ fun ManageScheduleDialog(
                 }
                 Button(
                     onClick = {
-                        // CAMBIO: Añade el nuevo horario como ScheduleDto.
-                        // id es null porque es nuevo y aun no lo crea el backend.
                         schedules.add(
                             ScheduleDto(
                                 id = null,
@@ -719,7 +707,6 @@ fun ManageScheduleDialog(
                                 endTime = endTime
                             )
                         )
-                        // Resetear inputs (opcional)
                         startTime = "09:00"
                         endTime = "18:00"
                     },
@@ -801,7 +788,7 @@ fun DeleteConfirmationDialog(
 
 @Composable
 fun ChangeRoleDialog(
-    user: UserDto, // CAMBIO: UserDto
+    user: UserDto,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {

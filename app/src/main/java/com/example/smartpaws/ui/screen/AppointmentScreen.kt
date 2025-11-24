@@ -126,7 +126,6 @@ fun AppointmentScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        // CAMBIO: Acceso directo a propiedades DTO
                         text = "con ${uiState.selectedDoctor?.name}",
                         fontSize = 14.sp,
                         color = Color.Gray
@@ -228,7 +227,7 @@ fun AppointmentScreen(
             ScheduledAppointmentsList(
                 appointments = uiState.scheduledAppointments,
                 pets = uiState.userPets,
-                doctors = uiState.doctors, // Esto es List<DoctorDto>
+                doctors = uiState.doctors,
                 primaryColor = green,
                 lightColor = lightGreen,
                 onDeleteClick = { appointment ->
@@ -238,7 +237,6 @@ fun AppointmentScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Divider
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -296,8 +294,8 @@ fun AppointmentScreen(
             }
         } else {
             DoctorSelector(
-                doctors = uiState.doctors, // List<DoctorDto>
-                selectedDoctor = uiState.selectedDoctor, // DoctorDto?
+                doctors = uiState.doctors,
+                selectedDoctor = uiState.selectedDoctor,
                 onDoctorSelected = { viewModel.selectDoctor(it) },
                 primaryColor = green,
                 lightColor = lightGreen,
@@ -603,8 +601,8 @@ fun PetCard(
 
 @Composable
 fun DoctorSelector(
-    doctors: List<DoctorDto>, // CAMBIO: Recibe DTO
-    selectedDoctor: DoctorDto?, // CAMBIO: Recibe DTO
+    doctors: List<DoctorDto>,
+    selectedDoctor: DoctorDto?,
     onDoctorSelected: (DoctorDto) -> Unit,
     primaryColor: Color,
     lightColor: Color,
@@ -630,7 +628,7 @@ fun DoctorSelector(
         items(doctors) { doctor ->
             DoctorCard(
                 doctor = doctor,
-                isSelected = doctor.id == selectedDoctor?.id, // CAMBIO: Comparación directa de IDs
+                isSelected = doctor.id == selectedDoctor?.id,
                 onClick = { if (enabled) onDoctorSelected(doctor) },
                 primaryColor = primaryColor,
                 lightColor = lightColor,
@@ -642,7 +640,7 @@ fun DoctorSelector(
 
 @Composable
 fun DoctorCard(
-    doctor: DoctorDto, // CAMBIO: Recibe DTO
+    doctor: DoctorDto,
     isSelected: Boolean,
     onClick: () -> Unit,
     primaryColor: Color,
@@ -686,7 +684,7 @@ fun DoctorCard(
             Spacer(Modifier.height(8.dp))
 
             Text(
-                text = doctor.name, // CAMBIO: doctor.name directo
+                text = doctor.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = if (enabled) Color.Black else Color.Gray,
@@ -696,7 +694,7 @@ fun DoctorCard(
             )
 
             Text(
-                text = doctor.specialty, // CAMBIO: doctor.specialty directo
+                text = doctor.specialty,
                 fontSize = 12.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.Center,
@@ -887,7 +885,7 @@ fun TimeSlotButton(
 fun ScheduledAppointmentsList(
     appointments: List<AppointmentResponseDto>,
     pets: List<PetsDto>,
-    doctors: List<DoctorDto>, // CAMBIO: List<DoctorDto>
+    doctors: List<DoctorDto>,
     primaryColor: Color,
     lightColor: Color,
     onDeleteClick: (AppointmentResponseDto) -> Unit
@@ -913,13 +911,12 @@ fun ScheduledAppointmentsList(
 fun ScheduledAppointmentCard(
     appointment: AppointmentResponseDto,
     pets: List<PetsDto>,
-    doctors: List<DoctorDto>, // CAMBIO: List<DoctorDto>
+    doctors: List<DoctorDto>,
     primaryColor: Color,
     lightColor: Color,
     onDeleteClick: () -> Unit
 ) {
     val petName = pets.find { it.id == appointment.petId }?.name ?: "Mascota desconocida"
-    // CAMBIO: Búsqueda directa en lista de DTOs
     val doctorObj = doctors.find { it.id == appointment.doctorId }
     val doctorName = doctorObj?.name ?: "Doctor desconocido"
     val doctorSpecialty = doctorObj?.specialty
@@ -1016,7 +1013,7 @@ fun ScheduledAppointmentCard(
                     }
                 }
 
-                // Notas (si existen)
+                // Notas
                 appointment.notes?.let { notes ->
                     if (notes.isNotBlank()) {
                         Spacer(Modifier.height(6.dp))

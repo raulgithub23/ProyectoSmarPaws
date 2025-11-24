@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    val green = Color(0xFF00C853)
     <style name="Theme.SMARTPAWS" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--Tema nuevo para mi splash screen-->
+    <style name="Theme.SMARTPAWS.Splash" parent="Theme.SplashScreen">
+        <!--Integramos color de fondo al splash screen-->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <!--Integramos una imagen al sl¿lash screen (usamos la misma del icono)-->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!--Integrar el tema que usara la app luego de finalizar el splash screen-->
+        <item name="postSplashScreenTheme">@style/Theme.SMARTPAWS</item>
+    </style>
 </resources>

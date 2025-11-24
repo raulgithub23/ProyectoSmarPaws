@@ -88,7 +88,7 @@ fun DoctorAppointmentsScreen(
 
 @Composable
 fun DoctorAppointmentCard(
-    appointment: DoctorAppointmentUiItem, // USAMOS EL NUEVO MODELO UI
+    appointment: DoctorAppointmentUiItem,
     primaryColor: Color
 ) {
     Card(
