@@ -69,6 +69,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.smartpaws.domain.validation.validateNameLettersOnly
+import com.example.smartpaws.domain.validation.validatePhoneDigitsOnly
 
 // Función para crear archivo temporal en cache/images/
 private fun createImageFile(context: Context): File? {
@@ -345,9 +347,14 @@ fun UserScreen(
                                 pendingCaptureUri = uri
                                 takePictureLauncher.launch(uri)
                             } else {
-                                Toast.makeText(context, "Error al crear archivo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Error al crear archivo",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
+
                         else -> {
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         }
@@ -368,129 +375,122 @@ fun UserScreen(
     }
 
     // Diálogo para editar nombre y teléfono
-    if (showEditDialog) {
-        AlertDialog(
-            onDismissRequest = { showEditDialog = false },
-            title = {
-                Text(
-                    "Editar Información",
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CA771)
-                )
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Campo de nombre
-                    OutlinedTextField(
-                        value = editName,
-                        onValueChange = { value ->
-                            // Filtra solo letras y espacios
-                            val filtered = value.filter { it.isLetter() || it.isWhitespace() }
-                            editName = filtered
-                            nameError = when {
-                                filtered.isBlank() -> "El nombre no puede estar vacío"
-                                filtered.length < 3 -> "El nombre debe tener al menos 3 caracteres"
-                                else -> null
+        if (showEditDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditDialog = false },
+                title = {
+                    Text(
+                        "Editar Información",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4CA771)
+                    )
+                },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // --- CAMPO NOMBRE ---
+                        OutlinedTextField(
+                            value = editName,
+                            onValueChange = { value ->
+                                editName = value
+                                nameError = validateNameLettersOnly(value)
+                            },
+                            label = { Text("Nombre") },
+                            isError = nameError != null, // Se pone rojo si el validador retornó un String
+                            supportingText = {
+                                nameError?.let { Text(it, color = Color.Red) }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4CA771),
+                                focusedLabelColor = Color(0xFF4CA771)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // --- CAMPO TELÉFONO ---
+                        OutlinedTextField(
+                            value = editPhone,
+                            onValueChange = { value ->
+                                if (value.all { it.isDigit() }) {
+                                    if (value.length <= 15) {
+                                        editPhone = value
+                                        phoneError = validatePhoneDigitsOnly(value)
+                                    }
+                                }
+                            },
+                            label = { Text("Teléfono") },
+                            isError = phoneError != null,
+                            supportingText = {
+                                phoneError?.let { Text(it, color = Color.Red) }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4CA771),
+                                focusedLabelColor = Color(0xFF4CA771)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val finalNameError = validateNameLettersOnly(editName)
+                            val finalPhoneError = validatePhoneDigitsOnly(editPhone)
+                            nameError = finalNameError
+                            phoneError = finalPhoneError
+                            if (finalNameError == null && finalPhoneError == null) {
+                                authViewModel.updateUserProfile(
+                                    name = editName.trim(),
+                                    phone = editPhone.trim()
+                                )
+                                Toast.makeText(context, "Información actualizada", Toast.LENGTH_SHORT)
+                                    .show()
+                                showEditDialog = false
                             }
                         },
-                        label = { Text("Nombre") },
-                        isError = nameError != null,
-                        supportingText = {
-                            nameError?.let { Text(it, color = Color.Red) }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4CA771),
-                            focusedLabelColor = Color(0xFF4CA771)
+                        // El botón se deshabilita si visualmente ya hay errores o campos vacíos
+                        enabled = nameError == null && phoneError == null &&
+                                editName.isNotBlank() && editPhone.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CA771)
                         ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Campo de teléfono
-                    OutlinedTextField(
-                        value = editPhone,
-                        onValueChange = { value ->
-                            // Filtra solo dígitos
-                            val digitsOnly = value.filter { it.isDigit() }
-                            editPhone = digitsOnly
-                            phoneError = when {
-                                digitsOnly.isBlank() -> "El teléfono no puede estar vacío"
-                                digitsOnly.length < 8 -> "El teléfono debe tener al menos 8 dígitos"
-                                else -> null
-                            }
-                        },
-                        label = { Text("Teléfono") },
-                        isError = phoneError != null,
-                        supportingText = {
-                            phoneError?.let { Text(it, color = Color.Red) }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF4CA771),
-                            focusedLabelColor = Color(0xFF4CA771)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Guardar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditDialog = false }) {
+                        Text("Cancelar", color = Color.Gray)
+                    }
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Validar antes de guardar
-                        val canSave = nameError == null && phoneError == null &&
-                                editName.isNotBlank() && editPhone.isNotBlank()
-
-                        if (canSave) {
-                            authViewModel.updateUserProfile(
-                                name = editName.trim(),
-                                phone = editPhone.trim()
-                            )
-                            Toast.makeText(context, "Información actualizada", Toast.LENGTH_SHORT).show()
-                            showEditDialog = false
-                        }
-                    },
-                    enabled = nameError == null && phoneError == null &&
-                            editName.isNotBlank() && editPhone.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4CA771)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) {
-                    Text("Cancelar", color = Color.Gray)
-                }
-            }
-        )
+            )
+        }
     }
-}
-
-@Composable
-fun InfoRow(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+    @Composable
+    fun InfoRow(
+        label: String,
+        value: String
     ) {
-        Text(
-            text = label,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF013237),
-            modifier = Modifier.width(100.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF013237),
+                modifier = Modifier.width(100.dp)
+            )
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        Text(
-            text = value,
-            fontSize = 16.sp,
-            color = Color(0xFF333333)
-        )
+            Text(
+                text = value,
+                fontSize = 16.sp,
+                color = Color(0xFF333333)
+            )
+        }
     }
-}

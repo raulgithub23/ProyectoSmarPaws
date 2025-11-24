@@ -8,11 +8,8 @@ sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object Register : Route("register") // Ruta Registro
     data object Pets : Route("pets") //Ruta para las mascotas
     data object Appointment : Route("appointment") //Ruta para las citas
-
     data object User : Route("user") //RUTA PARA VER EL PERFIL
-
     data object AdminPanel : Route("admin_panel")
-
     data object DoctorAppointments : Route("doctor_appointments")
 }
 
