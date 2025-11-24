@@ -1,6 +1,5 @@
 package com.example.smartpaws.ui.mascota
 
-import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.remote.pets.PetsDto
 
 sealed class PetsEvent {

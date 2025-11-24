@@ -1,5 +1,7 @@
 package com.example.smartpaws.ui.mascota
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,9 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.remote.pets.PetsDto
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DialogAddPetForm(
     userId: Long,

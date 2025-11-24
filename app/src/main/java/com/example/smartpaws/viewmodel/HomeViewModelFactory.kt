@@ -2,7 +2,6 @@ package com.example.smartpaws.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.smartpaws.data.local.pets.PetFactDao
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository

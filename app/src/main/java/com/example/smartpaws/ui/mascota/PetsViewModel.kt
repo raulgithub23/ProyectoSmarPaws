@@ -2,7 +2,6 @@ package com.example.smartpaws.ui.mascota
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartpaws.data.local.pets.PetsEntity
 import com.example.smartpaws.data.remote.pets.PetsDto
 import com.example.smartpaws.data.repository.PetsRepository
 import com.example.smartpaws.viewmodel.AuthViewModel
