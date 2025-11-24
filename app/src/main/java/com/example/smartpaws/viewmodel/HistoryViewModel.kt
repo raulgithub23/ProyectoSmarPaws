@@ -2,21 +2,23 @@ package com.example.smartpaws.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import com.example.smartpaws.data.remote.appointments.AppointmentResponseDto
 import com.example.smartpaws.data.repository.AppointmentRepository
 import com.example.smartpaws.data.repository.DoctorRepository
 import com.example.smartpaws.data.repository.PetsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-// Clase UI para reemplazar a AppointmentWithDetails en la vista
+// Clase UI para mostrar los datos en la vista
 data class HistoryAppointmentUiItem(
     val id: Long,
     val date: String,
@@ -28,14 +30,13 @@ data class HistoryAppointmentUiItem(
 )
 
 data class HistoryUiState(
-    val appointments: List<HistoryAppointmentUiItem> = emptyList(), // Lista de citas pasad
+    val appointments: List<HistoryAppointmentUiItem> = emptyList(), // Lista de citas pasadas
     val isLoading: Boolean = false,  // Indica si está cargando datos
     val errorMsg: String? = null // Mensaje de error (null si no hay error)
 )
 
-
-data class DetailUiState( // Data class que representa el estado del detalle de una cita
-    val appointment: HistoryAppointmentUiItem? = null, // Cita seleccionada (null si no hay ninguna)
+data class DetailUiState(
+    val appointment: HistoryAppointmentUiItem? = null,
     val isLoading: Boolean = false,
     val errorMsg: String? = null
 )
@@ -47,24 +48,20 @@ class HistoryViewModel(
     private val authViewModel: AuthViewModel
 ) : ViewModel() {
 
-    private val _historyState = MutableStateFlow(HistoryUiState())     // Estado privado mutable para el historial (solo este ViewModel puede modificarlo)
-    val historyState: StateFlow<HistoryUiState> = _historyState     // Estado público inmutable que la UI puede observar
+    private val _historyState = MutableStateFlow(HistoryUiState())
+    val historyState: StateFlow<HistoryUiState> = _historyState
 
-    private val _detailState = MutableStateFlow(DetailUiState())     // Estado privado mutable para el detalle de una cita
-    val detailState: StateFlow<DetailUiState> = _detailState     // Estado público inmutable para el detalle
+    private val _detailState = MutableStateFlow(DetailUiState())
+    val detailState: StateFlow<DetailUiState> = _detailState
 
-
-    init {     // Bloque init: se ejecuta al crear el ViewModel
-        viewModelScope.launch {        // Observa cambios en el estado de login del AuthViewModel
-            authViewModel.login.collect { loginState -> // collect: escucha continuamente los cambios en el estado de login
-                Log.d("HistoryViewModel", "Login state cambió - userId: ${loginState.userId}") // Log para debugging: registra cuando cambia el userId
-                if (loginState.userId != null) { // Si hay un usuario logueado, carga su historial
+    init {
+        viewModelScope.launch {
+            authViewModel.login.collect { loginState ->
+                Log.d("HistoryViewModel", "Login state cambió - userId: ${loginState.userId}")
+                if (loginState.userId != null) {
                     loadPastAppointments(loginState.userId)
-                } else { // Si no hay usuario (logout), limpia el estado
                     _historyState.update {
                         it.copy(
-                            appointments = emptyList(),
-                            isLoading = false,
                             errorMsg = null
                         )
                     }
@@ -74,48 +71,54 @@ class HistoryViewModel(
     }
 
     private fun loadPastAppointments(userId: Long) {
-        // Activa el estado de carga y limpia errores previos
         viewModelScope.launch {
             _historyState.update { it.copy(isLoading = true, errorMsg = null) }
             Log.d("HistoryViewModel", "Cargando historial para usuario: $userId")
 
             try {
-                // CAMBIO: Usa getAppointmentsByUser en lugar de getUpcomingAppointmentsByUser
                 val result = repository.getAppointmentsByUser(userId)
 
                 result.fold(
                     onSuccess = { allAppointments ->
-                        Log.d("HistoryViewModel", "Total citas recibidas: ${allAppointments.size}") // Log de cada cita para debugging
+                        Log.d("HistoryViewModel", "Total citas recibidas: ${allAppointments.size}")
 
-                        // Mapeamos DTO a UI Item buscando nombres (Crucial para microservicios)
                         val mappedAppointments = allAppointments.map { dto ->
                             mapDtoToUiItem(dto)
                         }
 
-                        mappedAppointments.forEach { apt -> // Log de cada cita para debugging
-                            Log.d("HistoryViewModel", "Cita: ${apt.date} - ${apt.petName} - ${apt.notes}")
-                        }
+                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
-                        val today = Clock.System.now()
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-                        Log.d("HistoryViewModel", "Fecha de hoy: $today")
-
-                        val pastAppointments = mappedAppointments.filter { appointment -> // FILTRADO: Solo citas con fecha anterior a hoy
+                        val pastAppointments = mappedAppointments.filter { appointment ->
                             try {
-                                val appointmentDate = LocalDate.parse(appointment.date) // Convierte el String de fecha a LocalDate para comparar
-                                val isPast = appointmentDate < today // Verifica si la fecha de la cita es menor (anterior) que hoy
-                                Log.d("HistoryViewModel", "${appointment.date} < $today = $isPast")
+                                val appDate = LocalDate.parse(appointment.date)
+
+                                val appTime = try {
+                                    LocalTime.parse(appointment.time)
+                                } catch (e: Exception) {
+                                    Log.e("HistoryViewModel", "Error parseando hora: ${appointment.time}", e)
+                                    LocalTime(0, 0)
+                                }
+
+                                val appDateTime = LocalDateTime(appDate, appTime)
+
+                                val isPast = appDateTime < now
+
+                                Log.d("HistoryViewModel", "Cita ${appointment.date} ${appointment.time} es pasado? $isPast")
                                 isPast
-                            } catch (e: Exception) { // Si hay error al parsear la fecha, registra el error y excluye esa cita
-                                Log.e("HistoryViewModel", "Error parseando fecha: ${appointment.date}", e)
-                                false
+
+                            } catch (e: Exception) {
+                                Log.e("HistoryViewModel", "Error procesando fecha completa: ${appointment.date}", e)
+                                try {
+                                    val appDate = LocalDate.parse(appointment.date)
+                                    appDate < now.date
+                                } catch (e2: Exception) {
+                                    false
+                                }
                             }
-                        }.sortedByDescending { it.date }
+                        }.sortedWith(compareByDescending<HistoryAppointmentUiItem> { it.date }.thenByDescending { it.time })
 
-                        Log.d("HistoryViewModel", "Citas pasadas filtradas: ${pastAppointments.size}")
+                        Log.d("HistoryViewModel", "Citas visibles filtradas (Historial): ${pastAppointments.size}")
 
-                        // Actualiza el estado con las citas filtradas
                         _historyState.update {
                             it.copy(
                                 appointments = pastAppointments,
@@ -135,8 +138,7 @@ class HistoryViewModel(
                     }
                 )
             } catch (e: Exception) {
-                // Si hay cualquier error lo registra y muestra mensaje al usuario
-                Log.e("HistoryViewModel", "Error cargando historial", e)
+                Log.e("HistoryViewModel", "Error cargando historial (Excepción)", e)
                 _historyState.update {
                     it.copy(
                         isLoading = false,
@@ -149,14 +151,14 @@ class HistoryViewModel(
 
     fun loadAppointmentDetail(appointmentId: Long) {
         viewModelScope.launch {
-            _detailState.update { it.copy(isLoading = true, errorMsg = null) } // Activa el estado de carga del detalle
+            _detailState.update { it.copy(isLoading = true, errorMsg = null) }
 
-            val result = repository.getAppointmentDetail(appointmentId) // Obtiene el detalle de la cita desde el repositorio
+            val result = repository.getAppointmentDetail(appointmentId)
 
             result.fold(
                 onSuccess = { dto ->
                     val uiItem = mapDtoToUiItem(dto)
-                    _detailState.update {  // Actualiza el estado según el resultado
+                    _detailState.update {
                         it.copy(
                             appointment = uiItem,
                             isLoading = false,
@@ -176,21 +178,11 @@ class HistoryViewModel(
         }
     }
 
-    /**
-     * Limpia el estado del detalle
-     * Se usa cuando el usuario cierra la vista de detalle para liberar memoria
-     */
-    fun clearDetail() {
-        _detailState.update { DetailUiState() }
-    }
-
-    // Función auxiliar para mapear IDs a Nombres
     private suspend fun mapDtoToUiItem(dto: AppointmentResponseDto): HistoryAppointmentUiItem {
         val petName = if (dto.petId != null) {
             petsRepository.getPetById(dto.petId).getOrNull()?.name ?: "Mascota desconocida"
         } else "Sin mascota"
 
-        // getDoctorWithSchedules ahora retorna un Result<DoctorDto>
         val doctorDto = doctorRepository.getDoctorWithSchedules(dto.doctorId).getOrNull()
 
         return HistoryAppointmentUiItem(

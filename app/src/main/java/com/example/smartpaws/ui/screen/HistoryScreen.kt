@@ -50,7 +50,7 @@ fun HistoryScreen(
     val bg = LightSecondary
     val cardColor = LightBackground
     val textColor = DarkGreen
-    val state by viewModel.historyState.collectAsState() //variable que nos trae los datos del viewmodel a medida que cambian
+    val state by viewModel.historyState.collectAsState()
 
     Box(
         modifier = Modifier
@@ -153,7 +153,6 @@ fun HistoryCard(
                 }
             }
 
-            // Información expandida por boton ver mas se agrega info adicional de la cita
             if (expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = textColor.copy(alpha = 0.3f))
