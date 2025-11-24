@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit
 
 object RemoteModule {
 
-    private const val AUTH_BASE_URL = "https://xd6w381w-8081.use2.devtunnels.ms/"
-    private const val DOCTOR_BASE_URL = "https://xd6w381w-8082.use2.devtunnels.ms/"
+    private const val AUTH_BASE_URL = "https://94js12g4-8081.brs.devtunnels.ms/"
+    private const val DOCTOR_BASE_URL = "https://94js12g4-8082.brs.devtunnels.ms/"
 
-    private const val PETS_BASE_URL = "https://xd6w381w-8083.use2.devtunnels.ms/"
-    private const val APPOINTMENTS_BASE_URL = "https://xd6w381w-8084.use2.devtunnels.ms/"
+    private const val PETS_BASE_URL = "https://94js12g4-8083.brs.devtunnels.ms/"
+    private const val APPOINTMENTS_BASE_URL = "https://94js12g4-8084.brs.devtunnels.ms/"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

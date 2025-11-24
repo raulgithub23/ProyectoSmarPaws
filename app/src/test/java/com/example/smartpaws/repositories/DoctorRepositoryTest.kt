@@ -1,6 +1,5 @@
 package com.example.smartpaws.repositories
 
-import android.util.Log
 import com.example.smartpaws.data.remote.DoctorApiService
 import com.example.smartpaws.data.remote.dto.CreateDoctorRequest
 import com.example.smartpaws.data.remote.dto.DoctorDto
@@ -9,16 +8,11 @@ import com.example.smartpaws.data.remote.dto.UpdateSchedulesRequest
 import com.example.smartpaws.data.repository.DoctorRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 
 class DoctorRepositoryTest {
@@ -38,21 +32,6 @@ class DoctorRepositoryTest {
         phone = "123456789",
         schedules = listOf(sampleScheduleDto)
     )
-
-    @Before
-    fun setup() {
-        // Mock la clase estática Log de Android
-        mockkStatic(Log::class)
-        //comportamiento para Log.d y Log.e (que devuelvan 0, como hace Android internamente)
-        every { Log.d(any(), any()) } returns 0
-        every { Log.e(any(), any()) } returns 0
-        every { Log.e(any(), any(), any()) } returns 0
-    }
-
-    @After
-    fun tearDown() {
-        unmockkStatic(Log::class)
-    }
 
     @Test
     fun getAllDoctorsWithSchedules_devuelve_lista_exitosamente() = runBlocking {
