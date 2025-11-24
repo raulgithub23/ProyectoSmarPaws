@@ -2,6 +2,7 @@ package com.example.smartpaws.repositories
 
 import com.example.smartpaws.data.remote.AuthApiService
 import com.example.smartpaws.data.remote.dto.LoginRequest
+import com.example.smartpaws.data.remote.dto.UpdateProfileRequest
 import com.example.smartpaws.data.remote.dto.UpdateRoleRequest
 import com.example.smartpaws.data.remote.dto.UserDto
 import com.example.smartpaws.data.repository.UserRepository
@@ -57,7 +58,6 @@ class UserRepositoryTest {
         val api = mockk<AuthApiService>()
         val repo = UserRepository(api)
 
-        // ⭐ CAMBIO: register devuelve UserDto completo
         val newUser = sampleUserDto.copy(id = 2L, name = "Maria López", email = "maria@example.com")
 
         coEvery { api.register(any()) } returns newUser
@@ -207,7 +207,6 @@ class UserRepositoryTest {
         val api = mockk<AuthApiService>()
         val repo = UserRepository(api)
 
-        // ⭐ CAMBIO: updateUserRole devuelve UserDto
         val updatedUser = sampleUserDto.copy(rol = "DOCTOR")
 
         coEvery { api.updateUserRole(1L, any(), "ADMIN") } returns updatedUser
@@ -256,13 +255,32 @@ class UserRepositoryTest {
     }
 
     @Test
-    fun updateUser_devuelve_not_implemented() = runBlocking {
+    fun updateUser_actualiza_exitosamente() = runBlocking {
         val api = mockk<AuthApiService>()
         val repo = UserRepository(api)
+
+        coEvery { api.updateUserProfile(1L, any()) } returns sampleUserDto
+
+        val result = repo.updateUser(1L, "Nuevo Nombre", "999888777")
+
+        assertTrue(result.isSuccess)
+        coVerify {
+            api.updateUserProfile(
+                1L,
+                UpdateProfileRequest("Nuevo Nombre", "999888777")
+            )
+        }
+    }
+
+    @Test
+    fun updateUser_devuelve_error_cuando_falla() = runBlocking {
+        val api = mockk<AuthApiService>()
+        val repo = UserRepository(api)
+
+        coEvery { api.updateUserProfile(any(), any()) } throws Exception("Error al actualizar")
 
         val result = repo.updateUser(1L, "Nuevo Nombre", "999888777")
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is NotImplementedError)
     }
 }

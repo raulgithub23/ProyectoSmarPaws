@@ -3,14 +3,22 @@ package com.example.smartpaws.viewmodel
 import com.example.smartpaws.data.local.storage.UserPreferences
 import com.example.smartpaws.data.remote.dto.UserDto
 import com.example.smartpaws.data.repository.UserRepository
+import com.example.smartpaws.domain.validation.validateConfirm
+import com.example.smartpaws.domain.validation.validateEmail
+import com.example.smartpaws.domain.validation.validateNameLettersOnly
+import com.example.smartpaws.domain.validation.validatePhoneDigitsOnly
+import com.example.smartpaws.domain.validation.validateStrongPassword
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -46,10 +54,33 @@ class AuthViewModelTest {
         Dispatchers.setMain(testDispatcher)
         userRepository = mockk(relaxed = true)
         userPreferences = mockk(relaxed = true)
+
+        mockkStatic("com.example.smartpaws.domain.validation.ValidatorsKt")
+
+        every { validateEmail(any()) } answers {
+            val email = firstArg<String>()
+            // Simulamos lógica básica: válido si tiene @ y no es el string "email-invalido" usado en los tests
+            if (email.contains("@") && !email.contains("invalido")) null else "Email inválido"
+        }
+
+        every { validateStrongPassword(any()) } answers {
+            val pass = firstArg<String>()
+            if (pass == "weak") "Contraseña débil" else null
+        }
+
+        every { validateConfirm(any(), any()) } answers {
+            val pass = firstArg<String>()
+            val confirm = secondArg<String>()
+            if (pass != confirm) "No coinciden" else null
+        }
+
+        every { validateNameLettersOnly(any()) } returns null
+        every { validatePhoneDigitsOnly(any()) } returns null
     }
 
     @After
     fun tearDown() {
+        unmockkStatic("com.example.smartpaws.domain.validation.ValidatorsKt")
         Dispatchers.resetMain()
     }
 
@@ -59,6 +90,8 @@ class AuthViewModelTest {
         coEvery { userRepository.getUserById(1L) } returns Result.success(sampleUserDto)
 
         viewModel = AuthViewModel(userRepository, userPreferences)
+
+        advanceUntilIdle()
 
         val loginState = viewModel.login.value
         assertTrue(loginState.success)
@@ -74,6 +107,7 @@ class AuthViewModelTest {
         every { userPreferences.loggedInUserId } returns flowOf(null)
 
         viewModel = AuthViewModel(userRepository, userPreferences)
+        advanceUntilIdle()
 
         val loginState = viewModel.login.value
         assertFalse(loginState.success)
@@ -116,6 +150,8 @@ class AuthViewModelTest {
         viewModel.onLoginPassChange("Pass123$")
         viewModel.submitLogin()
 
+        advanceUntilIdle()
+
         coVerify { userPreferences.saveUserId(1L) }
         coVerify { userRepository.getUserById(1L) }
 
@@ -138,6 +174,8 @@ class AuthViewModelTest {
         viewModel.onLoginPassChange("wrongpass")
         viewModel.submitLogin()
 
+        advanceUntilIdle()
+
         val state = viewModel.login.value
         assertFalse(state.success)
         assertNotNull(state.errorMsg)
@@ -151,6 +189,8 @@ class AuthViewModelTest {
 
         viewModel.onLoginEmailChange("")
         viewModel.submitLogin()
+
+        advanceUntilIdle()
 
         coVerify(exactly = 0) { userRepository.login(any(), any()) }
     }
@@ -225,6 +265,8 @@ class AuthViewModelTest {
 
         viewModel.submitRegister()
 
+        advanceUntilIdle()
+
         coVerify { userRepository.register("Maria López", "maria@example.com", "987654321", "Pass123$") }
 
         val state = viewModel.register.value
@@ -248,6 +290,8 @@ class AuthViewModelTest {
         viewModel.onConfirmChange("Pass123$")
 
         viewModel.submitRegister()
+
+        advanceUntilIdle()
 
         val state = viewModel.register.value
         assertFalse(state.success)
@@ -279,8 +323,10 @@ class AuthViewModelTest {
         coEvery { userRepository.getUserById(1L) } returns Result.success(sampleUserDto)
 
         viewModel = AuthViewModel(userRepository, userPreferences)
+        advanceUntilIdle()
 
         viewModel.logout()
+        advanceUntilIdle()
 
         coVerify { userPreferences.clearSession() }
 
@@ -299,8 +345,10 @@ class AuthViewModelTest {
         coEvery { userRepository.updateUser(any(), any(), any()) } returns Result.success(Unit)
 
         viewModel = AuthViewModel(userRepository, userPreferences)
+        advanceUntilIdle()
 
         viewModel.updateUserProfile("Nuevo Nombre", "999888777")
+        advanceUntilIdle()
 
         coVerify { userRepository.updateUser(1L, "Nuevo Nombre", "999888777") }
     }
