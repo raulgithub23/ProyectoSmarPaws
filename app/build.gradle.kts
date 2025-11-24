@@ -38,6 +38,11 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -53,6 +58,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.material3.window.size.class1)
+    implementation(libs.androidx.ui.test.junit4)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -104,4 +110,6 @@ dependencies {
     androidTestImplementation("androidx.test:rules:1.5.0")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
+
+    androidTestImplementation("io.mockk:mockk-android:1.13.12")
 }
