@@ -101,7 +101,14 @@ fun AppNavGraph(
 
         composable(Route.Home.path) {
             MainScaffoldWrapper(navController, authViewModel, windowSizeClass) {
-                HomeScreen(viewModel = homeViewModel)
+                HomeScreen(
+                    viewModel = homeViewModel,
+                    onNavigateToAppointments = {
+                        navController.navigate(Route.Appointment.path) {
+                            popUpTo(Route.Home.path)
+                        }
+                    }
+                )
             }
         }
 
