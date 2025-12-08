@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +57,8 @@ import com.example.smartpaws.R
 fun LoginScreenVm(
     vm: AuthViewModel,
     onLoginOkNavigateHome: () -> Unit,
-    onGoRegister: () -> Unit
+    onGoRegister: () -> Unit,
+    onGoForgotPassword: () -> Unit  // NUEVO
 ) {
     val state by vm.login.collectAsStateWithLifecycle()
 
@@ -77,6 +79,7 @@ fun LoginScreenVm(
         onPassChange = vm::onLoginPassChange,
         onSubmit = vm::submitLogin,
         onGoRegister = onGoRegister,
+        onGoForgotPassword = onGoForgotPassword
     )
 }
 
@@ -94,6 +97,7 @@ private fun LoginScreen(
     onPassChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onGoRegister: () -> Unit,
+    onGoForgotPassword: () -> Unit  // NUEVO
 ) {
     val bg = DarkGreen
     var showPass by remember { mutableStateOf(false) }
@@ -271,6 +275,16 @@ private fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // NUEVO: Botón de recuperar contraseña
+            Spacer(Modifier.height(16.dp))
+            TextButton(onClick = onGoForgotPassword) {
+                Text(
+                    text = "¿Olvidaste tu contraseña?",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 

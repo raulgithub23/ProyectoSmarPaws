@@ -11,6 +11,11 @@ sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object User : Route("user") //RUTA PARA VER EL PERFIL
     data object AdminPanel : Route("admin_panel")
     data object DoctorAppointments : Route("doctor_appointments")
+
+    data object ForgotPassword : Route("forgot_password")
+    data object ResetPassword : Route("reset_password/{token}") {
+        fun createRoute(token: String) = "reset_password/$token"
+    }
 }
 
 /*

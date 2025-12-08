@@ -41,6 +41,7 @@ import com.example.smartpaws.ui.screen.RegisterScreenVm
 import com.example.smartpaws.ui.screen.UserScreen
 import com.example.smartpaws.ui.screen.AdminPanelScreen
 import com.example.smartpaws.ui.screen.DoctorAppointmentsScreen
+import com.example.smartpaws.ui.screen.ForgotPasswordScreenVm
 import com.example.smartpaws.viewmodel.AdminViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModel
 import com.example.smartpaws.viewmodel.AppointmentViewModelFactory
@@ -83,7 +84,8 @@ fun AppNavGraph(
                         popUpTo(Route.Login.path) { inclusive = true }
                     }
                 },
-                onGoRegister = { navController.navigate(Route.Register.path) }
+                onGoRegister = { navController.navigate(Route.Register.path) },
+                onGoForgotPassword = { navController.navigate(Route.ForgotPassword.path) }
             )
         }
 
@@ -96,6 +98,21 @@ fun AppNavGraph(
                     }
                 },
                 onGoLogin = { navController.popBackStack() }
+            )
+        }
+
+        // NUEVA: Pantalla de recuperación de contraseña (TODO EN UNO)
+        composable(Route.ForgotPassword.path) {
+            ForgotPasswordScreenVm(
+                vm = authViewModel,
+                onBackToLogin = {
+                    navController.popBackStack()
+                },
+                onSuccessNavigateToLogin = {
+                    navController.navigate(Route.Login.path) {
+                        popUpTo(Route.ForgotPassword.path) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -210,16 +227,12 @@ private fun MainScaffoldWrapper(
     val goUser = { navController.navigate(Route.User.path) { popUpTo(Route.Home.path) } }
     val goLogin = { navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } } }
     val goAdminPanel = { navController.navigate(Route.AdminPanel.path) { popUpTo(Route.Home.path) } }
-
-    // navegación
     val goDoctorAppointments = { navController.navigate(Route.DoctorAppointments.path) { popUpTo(Route.Home.path) } }
 
     val onLogout = { authViewModel.logout(); goLogin() }
 
     val userProfile by authViewModel.userProfile.collectAsState()
     val isAdmin = userProfile?.rol == "ADMIN"
-    // si el rol es DOCTOR, puede ver esto.
-    // O si usamos el ADMIN como todo
     val isDoctor = userProfile?.rol == "DOCTOR" || isAdmin
 
     val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact

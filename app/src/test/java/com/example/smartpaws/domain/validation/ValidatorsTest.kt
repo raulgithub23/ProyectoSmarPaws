@@ -29,7 +29,7 @@ class ValidatorsTest {
         val result = validateEmail("usuario-sin-arroba")
         assertEquals("Formato de email inválido", result)
     }
-
+    
     // LETRAS SOLO NAME
     @Test
     fun validateNameLettersOnly_valid_returnsNull() {

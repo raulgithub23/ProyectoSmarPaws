@@ -2,8 +2,10 @@ package com.example.smartpaws.data.repository
 
 import com.example.smartpaws.data.remote.AuthApiService
 import com.example.smartpaws.data.remote.RemoteModule
+import com.example.smartpaws.data.remote.dto.ForgotPasswordRequest
 import com.example.smartpaws.data.remote.dto.LoginRequest
 import com.example.smartpaws.data.remote.dto.RegisterRequest
+import com.example.smartpaws.data.remote.dto.ResetPasswordByEmailRequest
 import com.example.smartpaws.data.remote.dto.UpdateImageRequest
 import com.example.smartpaws.data.remote.dto.UpdateProfileRequest
 import com.example.smartpaws.data.remote.dto.UpdateRoleRequest
@@ -114,11 +116,11 @@ class UserRepository(
         }
     }
 
-    suspend fun updateUser(userId: Long, name: String, phone: String): Result<Unit> {
+    suspend fun updateUser(userId: Long, name: String, phone: String): Result<UserDto> {
         return try {
             val request = UpdateProfileRequest(name, phone)
-            api.updateUserProfile(userId, request)
-            Result.success(Unit)
+            val response = api.updateUserProfile(userId, request)
+            Result.success(response)
         } catch (e: Exception) {
             Result.failure(
                 IllegalStateException("Error al actualizar perfil: ${e.message}")
@@ -126,14 +128,48 @@ class UserRepository(
         }
     }
 
-    suspend fun updateProfileImage(userId: Long, imagePath: String): Result<Unit> {
+    suspend fun updateProfileImage(userId: Long, imagePath: String): Result<UserDto> {
         return try {
             val request = UpdateImageRequest(imagePath)
-            api.updateProfileImage(userId, request)
-            Result.success(Unit)
+            val response = api.updateProfileImage(userId, request)
+            Result.success(response)
         } catch (e: Exception) {
             Result.failure(
                 IllegalStateException("Error al actualizar imagen: ${e.message}")
+            )
+        }
+    }
+
+    // METODO SIMPLIFICADO: Verificar email
+    suspend fun requestPasswordReset(email: String): Result<String> {
+        return try {
+            val request = ForgotPasswordRequest(email)
+            val response = api.forgotPassword(request)
+            if (response.success) {
+                Result.success(response.message)
+            } else {
+                Result.failure(IllegalStateException(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(
+                IllegalStateException("Error al verificar email: ${e.message}")
+            )
+        }
+    }
+
+    // METODO SIMPLIFICADO: Cambiar contraseña directamente con email
+    suspend fun resetPasswordByEmail(email: String, newPassword: String): Result<String> {
+        return try {
+            val request = ResetPasswordByEmailRequest(email, newPassword)
+            val response = api.resetPasswordByEmail(request)
+            if (response.success) {
+                Result.success(response.message)
+            } else {
+                Result.failure(IllegalStateException(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(
+                IllegalStateException("Error al restablecer contraseña: ${e.message}")
             )
         }
     }
