@@ -51,15 +51,25 @@ interface AuthApiService {
         @Body request: UpdateProfileRequest
     ): UserDto
 
-    @PUT("auth/user/{id}/image")
-    suspend fun updateProfileImage(
+    @POST("auth/user/{id}/upload-image")
+    suspend fun uploadProfileImage(
         @Path("id") userId: Long,
-        @Body request: UpdateImageRequest
-    ): UserDto
+        @Body request: ImageUploadRequest
+    ): ApiResponse
 
     // NUEVOS ENDPOINTS PARA RECUPERACION DE CONTRASEÑA
     @POST("auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): ApiResponse
+
+    @GET("auth/user/{id}/image")
+    suspend fun getProfileImage(@Path("id") userId: Long): ImageResponse
+
+    @DELETE("auth/user/{id}/image")
+    suspend fun deleteProfileImage(@Path("id") userId: Long): ApiResponse
+
+    // Recuperación de contraseña
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): ApiResponse
 
     @POST("auth/reset-password-by-email")
     suspend fun resetPasswordByEmail(@Body request: ResetPasswordByEmailRequest): ApiResponse

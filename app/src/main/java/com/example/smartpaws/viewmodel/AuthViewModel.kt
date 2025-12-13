@@ -198,15 +198,30 @@ class AuthViewModel(
         viewModelScope.launch {
             val currentUser = _userProfile.value
             if (currentUser != null) {
-                val result = repository.updateProfileImage(currentUser.id, imagePath)
-                result.onSuccess { updatedUser ->
-                    _userProfile.value = updatedUser
-                }
-                result.onFailure {
+                val result = repository.uploadProfileImage(currentUser.id, imagePath)
+                result.onSuccess { message ->
+                    // Recargar perfil para obtener la actualización
                     loadUserProfile(currentUser.id)
+                }
+                result.onFailure { error ->
+                    // Manejar error si es necesario
+                    println("Error al subir imagen: ${error.message}")
                 }
             }
         }
+    }
+    fun loadProfileImage(): String? {
+        var base64Image: String? = null
+        viewModelScope.launch {
+            val currentUser = _userProfile.value
+            if (currentUser != null) {
+                val result = repository.getProfileImage(currentUser.id)
+                result.onSuccess { image ->
+                    base64Image = image
+                }
+            }
+        }
+        return base64Image
     }
 
     fun clearLoginResult() {
