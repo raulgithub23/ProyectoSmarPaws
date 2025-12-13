@@ -59,12 +59,10 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppRoot(windowSizeClass: WindowSizeClass) {
-    // ====== CONSTRUCCIÓN DE DEPENDENCIAS ======
     val context = LocalContext.current.applicationContext
 
     val userPreferences = remember { UserPreferences(context) }
 
-    // CRÍTICO: Pasar el context al UserRepository
     val userRepository = remember { UserRepository(context = context) }
 
     val appointmentRepository = remember { AppointmentRepository() }
@@ -102,11 +100,9 @@ fun AppRoot(windowSizeClass: WindowSizeClass) {
         factory = AdminViewModelFactory(userRepository, doctorRepository)
     )
 
-    // Estados clave del AuthViewModel para mantener la sesión iniciada
     val isLoadingSession by authViewModel.isLoadingSession.collectAsState()
     val loginState by authViewModel.login.collectAsState()
 
-    // ====== NAVEGACIÓN ======
     val navController = rememberNavController()
     SMARTPAWSTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
@@ -119,7 +115,6 @@ fun AppRoot(windowSizeClass: WindowSizeClass) {
                     CircularProgressIndicator()
                 }
             } else {
-                // Ruta de inicio dinámica
                 val startDestination = if (loginState.userId != null) {
                     val userProfile = authViewModel.userProfile.collectAsState().value
 
