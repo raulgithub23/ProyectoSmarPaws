@@ -137,23 +137,24 @@ class AuthViewModel(
 
             val result = repository.login(s.email.trim(), s.pass)
 
-            _login.update {
-                if (result.isSuccess) {
-                    val user = result.getOrNull()
-                    if (user != null) {
-                        viewModelScope.launch {
-                            userPreferences.saveUserId(user.id)
-                        }
-                        loadUserProfile(user.id)
-                    }
+            if (result.isSuccess) {
+                val user = result.getOrNull()
+                // Cargar perfil ANTES de actualizar el estado de éxito para que el ADMIN se detecte
+                if (user != null) {
+                    userPreferences.saveUserId(user.id)
+                    loadUserProfile(user.id)
+                }
 
+                _login.update {
                     it.copy(
                         isSubmitting = false,
                         success = true,
                         errorMsg = null,
                         userId = user?.id
                     )
-                } else {
+                }
+            } else {
+                _login.update {
                     it.copy(
                         isSubmitting = false,
                         success = false,
@@ -164,19 +165,17 @@ class AuthViewModel(
         }
     }
 
-    private fun loadUserProfile(userId: Long) {
-        viewModelScope.launch {
-            val result = repository.getUserById(userId)
-            result.fold(
-                onSuccess = { userDto ->
-                    _userProfile.value = userDto
-                },
-                onFailure = {
-                    _userProfile.value = null
-                    userPreferences.clearSession()
-                }
-            )
-        }
+    private suspend fun loadUserProfile(userId: Long) {
+        val result = repository.getUserById(userId)
+        result.fold(
+            onSuccess = { userDto ->
+                _userProfile.value = userDto
+            },
+            onFailure = {
+                _userProfile.value = null
+                userPreferences.clearSession()
+            }
+        )
     }
 
     fun updateUserProfile(name: String, phone: String) {
@@ -200,11 +199,9 @@ class AuthViewModel(
             if (currentUser != null) {
                 val result = repository.uploadProfileImage(currentUser.id, imagePath)
                 result.onSuccess { message ->
-                    // Recargar perfil para obtener la actualización
                     loadUserProfile(currentUser.id)
                 }
                 result.onFailure { error ->
-                    // Manejar error si es necesario
                     println("Error al subir imagen: ${error.message}")
                 }
             }
@@ -317,7 +314,6 @@ class AuthViewModel(
         _register.update { it.copy(success = false, errorMsg = null) }
     }
 
-    // ----------------- RECUPERACION DE CONTRASEÑA (PASO 1: EMAIL) -----------------
 
     fun onForgotPasswordEmailChange(value: String) {
         _forgotPassword.update {
@@ -346,8 +342,6 @@ class AuthViewModel(
 
             _forgotPassword.update {
                 if (result.isSuccess) {
-                    // Extraemos el token de la respuesta (si el backend lo retorna)
-                    // En este caso, asumimos que el mensaje contiene el token o lo guardamos internamente
                     it.copy(
                         isSubmittingEmail = false,
                         emailSent = true,
@@ -365,15 +359,10 @@ class AuthViewModel(
         }
     }
 
-    // Función auxiliar para extraer token (si el backend lo envía en el mensaje)
-    // Si no, puedes modificar el backend para que retorne el token directamente
     private fun extractTokenFromMessage(message: String): String {
-        // Por ahora, retornamos un string vacío
-        // Deberás modificar tu backend para que retorne el token en la respuesta
         return ""
     }
 
-    // ----------------- RECUPERACION DE CONTRASEÑA (PASO 2: NUEVA CONTRASEÑA) -----------------
 
     fun onForgotPasswordNewPasswordChange(value: String) {
         _forgotPassword.update {
@@ -415,8 +404,6 @@ class AuthViewModel(
             }
             delay(500)
 
-            // Usamos el email en lugar del token para el reset
-            // Deberás modificar tu backend para aceptar email en lugar de token
             val result = repository.resetPasswordByEmail(s.email.trim(), s.newPassword)
 
             _forgotPassword.update {

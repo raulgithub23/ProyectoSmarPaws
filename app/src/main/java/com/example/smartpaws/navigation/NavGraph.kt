@@ -80,7 +80,15 @@ fun AppNavGraph(
             LoginScreenVm(
                 vm = authViewModel,
                 onLoginOkNavigateHome = {
-                    navController.navigate(Route.Home.path) {
+                    // Verificamos el rol antes de navegar
+                    val userProfile = authViewModel.userProfile.value
+                    val destination = when (userProfile?.rol) {
+                        "ADMIN" -> Route.AdminPanel.path
+                        "DOCTOR" -> Route.DoctorAppointments.path
+                        else -> Route.Home.path
+                    }
+
+                    navController.navigate(destination) {
                         popUpTo(Route.Login.path) { inclusive = true }
                     }
                 },
